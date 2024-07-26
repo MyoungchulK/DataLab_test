@@ -24,7 +24,7 @@ class proc_3d_loader:
         self.pts_nei_curv = np.nanmin(eig_val_nei) / np.nansum(eig_val_nei)
         if self.use_debug:
             self.eig_val_nei = eig_val_nei
-        del eig_val
+        del eig_val_nei
 
     def get_3d_process(self, pts, idx, rad, use_KDTree = False):
 
@@ -48,5 +48,5 @@ class proc_3d_loader:
 
         self.get_covar_mtx()
 
-        self.get_appro_curv()
+        self.get_approx_curv()
 
