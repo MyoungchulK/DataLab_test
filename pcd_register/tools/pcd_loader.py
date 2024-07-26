@@ -13,6 +13,8 @@ class pcd_loader:
     def __init__(self, data, verbose = False):
 
         self.verbose = verbose
+        if self.verbose:
+            print(f'Input file: {data}')
 
         if ~is_pcd_format(data):
             data = o3d.data.EaglePointCloud().path

@@ -28,6 +28,11 @@ class proc_3d_loader:
 
     def get_3d_process(self, pts, idx, rad):
 
+        if self.verbose:
+            print(f'Size of total points: {pts.shape}')
+            print(f'Selected index: {idx}')
+            print(f'Selected radius: {rad}')
+
         pts_i = pts[idx]
         if self.use_KDTree:
             rad_nei_idx = tree.query_ball_point(pts_i, rad)
@@ -41,6 +46,8 @@ class proc_3d_loader:
             del rad_all
 
         self.pts_nei = pts[rad_nei_idx]
+        if self.verbose:
+            print(f'Size of points within radius {rad}: {self.pts_nei.shape}')
         if self.use_debug:
             self.pts_i = pts_i
             self.rad_nei_idx = rad_nei_idx
