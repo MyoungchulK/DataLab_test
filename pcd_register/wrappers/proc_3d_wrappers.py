@@ -1,5 +1,6 @@
 import os, sys
 import click
+import numpy as np
 
 # custom lib
 curr_path = os.getcwd()
@@ -24,11 +25,13 @@ def main(data, index, radius, verbose, use_debug):
     proc_3d.get_3d_process(pts, index, radius)  
     covar_mtx = proc_3d.pts_nei_cov
     approx_curv = proc_3d.pts_nei_curv
+    proj_pts = proc_3d.pts_nei_proj
     del proc_3d
     
-    print(f'Covariance matrix @ index {index}: \n{covar_mtx}')
+    np.set_printoptions(threshold=0) # turncate numpy print. just for cosmetic
+    print(f'Covariance matrix @ index {index}:\n{covar_mtx}')
     print(f'Approximate Curvature @ index {index}: {approx_curv}')
-    #print(f'Projection of points to the plane @ index {index}: {}')
+    print(f'Projection of points to the plane @ index {index}:\n{proj_pts}\nSize of array: {proj_pts.shape}')
 
 if __name__ == "__main__":
 
