@@ -26,10 +26,10 @@ class proc_3d_loader:
             self.eig_val_nei = eig_val_nei
         del eig_val_nei
 
-    def get_3d_process(self, pts, idx, rad, use_KDTree = False):
+    def get_3d_process(self, pts, idx, rad):
 
         pts_i = pts[idx]
-        if use_KDTree:
+        if self.use_KDTree:
             rad_nei_idx = tree.query_ball_point(pts_i, rad)
         else:
             rad_all = np.sqrt(np.nansum((pts - pts_i[np.newaxis, :]) ** 2, axis = 1))
@@ -47,6 +47,8 @@ class proc_3d_loader:
         del pts_i, rad_nei_idx
 
         self.get_covar_mtx()
+        if self.use_debug == False:
+            del self.pts_nei
 
         self.get_approx_curv()
 
