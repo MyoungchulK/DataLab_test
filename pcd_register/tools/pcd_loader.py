@@ -27,6 +27,6 @@ class pcd_loader:
 
     def get_pts_in_np(self):
 
-        self.pts = np.asarray(self.pcd_dat.points)
-        self.col = np.asarray(self.pcd_dat.colors)
-        self.nor = np.asarray(self.pcd_dat.normals)
+        self.pts = np.asarray(self.pcd_dat.points, dtype = float)
+        self.col = np.asarray(self.pcd_dat.colors, dtype = float)
+        self.nor = np.asarray(self.pcd_dat.normals, dtype = float)
