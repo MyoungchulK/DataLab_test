@@ -25,9 +25,9 @@ def main(data, index, radius, verbose, use_debug):
     covar_mtx = proc_3d.pts_nei_cov
     approx_curv = proc_3d.pts_nei_curv
     
-    print(f'Covariance matrix @ index #{index}: \n{covar_mtx}')
-    print(f'Approximate Curvature @ index #{index}: {approx_curv}')
-    #print(f'Projection of points to the plane  @ index #{index}: {}')
+    print(f'Covariance matrix @ index {index}: \n{covar_mtx}')
+    print(f'Approximate Curvature @ index {index}: {approx_curv}')
+    #print(f'Projection of points to the plane @ index {index}: {}')
 
 if __name__ == "__main__":
 
