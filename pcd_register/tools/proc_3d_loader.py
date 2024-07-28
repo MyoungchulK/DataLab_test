@@ -118,7 +118,7 @@ class proc_3d_loader:
         # The egien vector is contating the normal vector at point `idx`.
         eig_val_nei, self.eig_vec_nei = np.linalg.eigh(self.pts_nei_cov)
 
-        # The index of the minimum element in the `eig_val_nei` array.
+        # The index of the smallest element in the `eig_val_nei` array.
         self.min_idx = np.nanargmin(eig_val_nei)
 
         # The approximate curvature is the smallest egien value divided by the 

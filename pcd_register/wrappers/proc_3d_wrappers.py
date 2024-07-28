@@ -101,7 +101,7 @@ def main(data: str,
     if __name__ == "__main__":
         # Save the results.
         # Until I confirm the conventional file format for saving the results,
-        # It will be saves in the hdf5 format.
+        # It will be saved in the hdf5 format.
         import h5py       
 
         # Make output path 
