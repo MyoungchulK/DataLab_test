@@ -22,11 +22,13 @@ from tools.utility import size_checker
 # The arguments are controlled by the click package.
 @click.command()
 @click.option('-d', '--data', default='', type=str)
+@click.option('-o', '--output', default='', type=str)
 @click.option('-i', '--index', default=0, type=int)
 @click.option('-r', '--radius', default=0.1, type=float)
 @click.option('-v', '--verbose', default=False, type=bool)
 @click.option('-u', '--use_debug', default=False, type=bool)
-def main(data: str, 
+def main(data: str,
+         output: str, 
          index: int, 
          radius: float, 
          verbose: bool, 
@@ -39,6 +41,8 @@ def main(data: str,
     ----------
     data : str
         The input file path (default is '')
+    output : str
+        The ptah for storing output file (default is '')
     index : int
         The index for selecting the point (default is 0)
     radius : float
@@ -104,10 +108,12 @@ def main(data: str,
         # It will be saved in the hdf5 format.
         import h5py       
 
-        # Make output path 
-        output_path = '../../output' # TODO: make package to control the path.
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
+        # Make output path
+        if len(output) == 0: 
+            code_path = os.path.dirname(os.path.realpath(__file__)) # bit old method
+            output = os.path.join(code_path, '../../output')
+        if not os.path.exists(output):
+            os.makedirs(output)
 
         # Set the file name 
         if len(data) == 0:
@@ -116,7 +122,7 @@ def main(data: str,
             dat_base = os.path.basename(data)
             dat_name = os.path.splitext(dat_base)[0]
         dat_name_full = f'{dat_name}_proc_3d_idx{index}_rad{radius}.h5'
-        output_name = os.path.join(output_path, dat_name_full)
+        output_name = os.path.join(output, dat_name_full)
        
         # Creates the hdf5 file.
         hf = h5py.File(output_name, 'w')
