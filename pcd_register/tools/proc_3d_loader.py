@@ -200,7 +200,7 @@ class proc_3d_loader:
 
             if self.use_debug:
                 self.rad_all = rad_all
-            if self.verbose: # To give a sense to user about data size.
+            if self.verbose: # To give a sense to user about data distribution.
                 medi_rad = np.nanmedian(rad_all)
                 print(f'The median of all radius is {np.round(medi_rad, 2)}')
             del rad_all

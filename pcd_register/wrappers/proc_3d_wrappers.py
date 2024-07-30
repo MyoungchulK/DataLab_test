@@ -27,7 +27,7 @@ from tools.utility import size_checker
 @click.option('-r', '--radius', default=0.1, type=float)
 @click.option('-v', '--verbose', default=False, type=bool)
 @click.option('-u', '--use_debug', default=False, type=bool)
-def main(data: str,
+def proc_3d_main(data: str,
          output: str, 
          index: int, 
          radius: float, 
@@ -42,7 +42,8 @@ def main(data: str,
     data : str
         The input file path (default is '')
     output : str
-        The ptah for storing output file (default is '')
+        The path for storing output file. If user doesn't specify the path,
+        It saves the output in the DataLab_test/output/ path. (default is '')
     index : int
         The index for selecting the point (default is 0)
     radius : float
@@ -139,7 +140,7 @@ def main(data: str,
  
 if __name__ == "__main__":
 
-    main()
+    proc_3d_main()
 
 
 
