@@ -17,7 +17,7 @@ curr_path = os.getcwd()
 sys.path.append(curr_path + '/../')
 from tools.pcd_loader import pcd_loader
 from tools.proc_3d_loader import proc_3d_loader
-from tools.utility import size_checker
+from tools.utility import h5_savor
 
 # The arguments are controlled by the click package.
 @click.command()
@@ -107,33 +107,13 @@ def proc_3d_main(data: str,
         # Save the results.
         # Until I confirm the conventional file format for saving the results,
         # It will be saved in the hdf5 format.
-        import h5py       
-
-        # Make output path
-        if len(output) == 0: 
-            code_path = os.path.dirname(os.path.realpath(__file__)) # bit old method
-            output = os.path.join(code_path, '../../output')
-        if not os.path.exists(output):
-            os.makedirs(output)
-
-        # Set the file name 
         if len(data) == 0:
             dat_name = 'EaglePointCloud'
         else:
             dat_base = os.path.basename(data)
             dat_name = os.path.splitext(dat_base)[0]
         dat_name_full = f'{dat_name}_proc_3d_idx{index}_rad{radius}.h5'
-        output_name = os.path.join(output, dat_name_full)
-       
-        # Creates the hdf5 file.
-        hf = h5py.File(output_name, 'w')
-        for r in results:
-            if verbose:
-                print(r, results[r].shape) # Checking what is saving in the file.
-            hf.create_dataset(r, data=results[r], compression="gzip"
-                              , compression_opts=9)
-        hf.close()
-        print(f'Output is in {output_name}. {size_checker(output_name)}')
+        h5_savor(output, dat_name_full, results, verbose=verbose)
     else: 
         # Return the results.
         return results
