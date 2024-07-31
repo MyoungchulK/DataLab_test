@@ -63,10 +63,9 @@ def proc_3d_main(data: str,
 
     # Loads pcd file.
     pcd = pcd_loader(data, verbose=verbose)
-    pcd.get_pts_in_np() # Store the points in a NumPy array.
 
     # Get the all points.
-    pcd.get_pts_in_np() # Store the points in a NumPy array.
+    pcd.get_pts(use_np=True) # Store the points in a NumPy array.
     pts = pcd.pts # 3d points in 2d array. Shape: (# of points, xyz)
  
     # Constructs the 3d process class. 

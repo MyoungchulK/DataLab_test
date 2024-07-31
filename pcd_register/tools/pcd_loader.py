@@ -53,7 +53,7 @@ class pcd_loader:
 
     Methods
     -------
-    get_pts_in_np()
+    get_pts()
         Extract the informations from pcd file and wrap with NumPy array
     """
 
@@ -87,9 +87,21 @@ class pcd_loader:
                 print('Something is wrong in the input file!')
             sys.exit(1)
     
-    def get_pts_in_np(self):
-        """Extract the informations from pcd file and wrap with NumPy array"""
+    def get_pts(self, use_np: bool = False):
+        """Extract the informations from pcd file and wrap with NumPy array
 
-        self.pts = np.asarray(self.pcd_dat.points, dtype = float)
-        self.col = np.asarray(self.pcd_dat.colors, dtype = float)
-        self.nor = np.asarray(self.pcd_dat.normals, dtype = float)
+        Parameters
+        ----------
+        use_np : bool
+            Boolean statement to wrap the point information with 
+            NumPy array (default is False)
+        """        
+        
+        if use_np:
+            self.pts = np.asarray(self.pcd_dat.points, dtype = float)
+            self.col = np.asarray(self.pcd_dat.colors, dtype = float)
+            self.nor = np.asarray(self.pcd_dat.normals, dtype = float)
+        else:
+            self.pts = self.pcd_dat.points
+            self.col = self.pcd_dat.colors
+            self.nor = self.pcd_dat.normals
