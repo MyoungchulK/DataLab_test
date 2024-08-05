@@ -88,10 +88,20 @@ def main(ctx: click.core.Context,
             method, dat_src=dat_src, output=output, index=index,
             radius=radius, verbose=verbose, use_dat_ex=use_dat_ex, 
             use_debug=use_debug)
-
+    elif pipe == 'regi':
+        results = ctx.invoke(
+            method, dat_src=dat_src, dat_tar=dat_tar, output=output,
+            verbose=verbose, use_dat_ex=use_dat_ex, use_debug=use_debug)
+    else:
+        print('Something is wrong in the pipeline name!')
+        sys.exit(1)
+    
     # Until I confirm the conventional file format for saving the results,
-    # It will be saved in the hdf5 format.
-    file_name = f'{dat_key}_{pipe}_idx{index}_rad{radius}.h5'
+    # it will be saved in the hdf5 format.
+    if pipe == 'proc_3d':
+        file_name = f'{dat_key}_{pipe}_idx{index}_rad{radius}.h5'
+    elif pipe == 'regi':
+        file_name = f'{dat_key}_{pipe}.h5'
     h5_savor(output, file_name, results, verbose=verbose)
     
 if __name__ == "__main__":

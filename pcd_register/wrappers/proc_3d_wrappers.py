@@ -30,12 +30,12 @@ from tools.utility import h5_savor
 @click.option('-e', '--use_dat_ex', default=False, type=bool)
 @click.option('-u', '--use_debug', default=False, type=bool)
 def proc_3d_main(dat_src: str,
-         output: str, 
-         index: int, 
-         radius: float, 
-         verbose: bool, 
-         use_dat_ex: bool,
-         use_debug: bool) -> dict:
+                 output: str, 
+                 index: int, 
+                 radius: float, 
+                 verbose: bool, 
+                 use_dat_ex: bool,
+                 use_debug: bool) -> dict:
     """Designed to call necessary classes for calculation. If it is executed by
     itself, It will save the results in hdf5 format. If not, It will return the
     results in a dictionary format.
@@ -65,7 +65,7 @@ def proc_3d_main(dat_src: str,
     Returns
     -------
     dict
-        The results will be liself.nor = self.pcd_list[pcd_idx].normalsnked to a dictionary format
+        The results will be linked to a dictionary format
     """
 
     # Check the sanity of the data path when it is main.
@@ -119,7 +119,7 @@ def proc_3d_main(dat_src: str,
     if __name__ == "__main__":
         # Save the results.
         # Until I confirm the conventional file format for saving the results,
-        # It will be saved in the hdf5 format.
+        # it will be saved in the hdf5 format.
         file_name = f'{dat_key}_{pipe}_idx{index}_rad{radius}.h5'
         h5_savor(output, file_name, results, verbose=verbose)
     else: 
