@@ -52,11 +52,12 @@ def get_data_info(pipe: str,
         dat_key = 'icp'
     else:
         # First, check whether string has same end with '.pcd'.
-        is_pcd_src = dat_src.endswith('.pcd')
+        pos_formats = ('.pcd', '.ply')
+        is_pcd_src = dat_src.endswith(pos_formats)
         # If pipeline is registration, then we actually check the sanity of 
         # input target file.
         if pipe == 'regi':
-            is_pcd_tar = dat_tar.endswith('.pcd')
+            is_pcd_tar = dat_tar.endswith(pos_formats)
         else:
             is_pcd_tar = True
         
@@ -125,9 +126,9 @@ class pcd_loader:
             self.pcd_list.append(o3d.io.read_point_cloud(indi))
             if self.verbose:
                 print(f'Input file: {indi}')
-
+            
             # If file is empty exit the script/
-            if len(self.pcd_list[idx].points) == 0:
+            if self.pcd_list[idx].is_empty():
                 print('Something is wrong in the input file!')
                 sys.exit(1)
     

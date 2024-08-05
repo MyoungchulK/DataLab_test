@@ -4,7 +4,7 @@ This script is designed to call necessary classes to calculate the covariance
 matrix, approximate curvature, and projection of point to the plane without 
 using the Open3d package.
 
-    * main - Wrap pcd_loader and proc_3d_loader foe calculation 
+    * main - Wrap pcd_loader and proc_3d_loader for calculation 
 """
 
 import os
