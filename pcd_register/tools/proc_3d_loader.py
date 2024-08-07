@@ -151,7 +151,8 @@ class proc_3d_loader:
         # Calculates the projected points by the vector subtraction.
         # To take into account different dimension between two arrays,
         # `np.newaxis` is used to increase the dimension.
-        self.pts_nei_proj = self.pts_nei - dis_to_plane[:, np.newaxis]*nor_vec_nei[np.newaxis, :]
+        self.pts_nei_proj = self.pts_nei \
+                            - dis_to_plane[:, np.newaxis]*nor_vec_nei[np.newaxis, :]
         
         if self.use_debug:
             self.nor_vec_nei = nor_vec_nei
