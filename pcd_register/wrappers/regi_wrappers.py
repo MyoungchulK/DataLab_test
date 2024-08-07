@@ -23,14 +23,12 @@ from tools.utility import h5_savor
 
 # The arguments are controlled by the click package.
 @click.command()
-@click.option('-s', '--dat_src', default='', type=str)
-@click.option('-t', '--dat_tar', default='', type=str)
+@click.option('-l', '--dat_list', default='', type=str)
 @click.option('-o', '--output', default='', type=str)
 @click.option('-v', '--verbose', default=False, type=bool)
 @click.option('-e', '--use_dat_ex', default=False, type=bool)
-@click.option('-u', '--use_debug', default=False, type=bool)
-def regi_main(dat_src: str,
-              dat_tar: str,
+@click.option('-d', '--use_debug', default=False, type=bool)
+def regi_main(dat_list: str,
               output: str, 
               verbose: bool, 
               use_dat_ex: bool,
@@ -41,10 +39,9 @@ def regi_main(dat_src: str,
 
     Parameters
     ----------
-    dat_src : str
-        The input source file path (default is '')
-    dat_tar : str
-        The input target file path (default is '')
+    dat_list : str
+        The list of input file paths (default is ''). User can input multiple
+        files by saparating comma without space.
     output : str
         The path for storing output file. If user doesn't specify the path,
         It saves the output in the DataLab_test/output/ path. (default is '')
@@ -67,12 +64,14 @@ def regi_main(dat_src: str,
     # Check the sanity of the data path when it is main.
     if __name__ == "__main__":
         pipe = 'regi'
-        dat_src, dat_tar, dat_key = get_data_info(pipe, dat_src, dat_tar, 
-                                                  use_dat_ex=use_dat_ex, 
-                                                  verbose=verbose)
+        dat_list, dat_key = get_data_info(pipe, dat_list, use_dat_ex=use_dat_ex, 
+                                          verbose=verbose)
 
     # Loads pcd file.
-    pcd = pcd_loader([dat_src, dat_tar], verbose=verbose)
+    # For this registration test, I only choose first two pcd data in the list 
+    # for the calculation. In the real case, the script need to be smarter to do 
+    # calculation for all the input files.
+    pcd = pcd_loader(dat_list, verbose=verbose)
     pcd_src = pcd.pcd_list[0] # source pcd file.
     pcd_tar = pcd.pcd_list[1] # target pcd file.
 

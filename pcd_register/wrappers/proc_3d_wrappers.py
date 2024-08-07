@@ -22,14 +22,14 @@ from tools.utility import h5_savor
 
 # The arguments are controlled by the click package.
 @click.command()
-@click.option('-s', '--dat_src', default='', type=str)
+@click.option('-l', '--dat_list', default='', type=str)
 @click.option('-o', '--output', default='', type=str)
 @click.option('-i', '--index', default=0, type=int)
 @click.option('-r', '--radius', default=0.1, type=float)
 @click.option('-v', '--verbose', default=False, type=bool)
 @click.option('-e', '--use_dat_ex', default=False, type=bool)
-@click.option('-u', '--use_debug', default=False, type=bool)
-def proc_3d_main(dat_src: str,
+@click.option('-d', '--use_debug', default=False, type=bool)
+def proc_3d_main(dat_list: str,
                  output: str, 
                  index: int, 
                  radius: float, 
@@ -42,8 +42,9 @@ def proc_3d_main(dat_src: str,
 
     Parameters
     ----------
-    dat_src : str
-        The input source file path (default is '')
+    dat_list : str
+        The list of input file paths (default is ''). User can input multiple
+        files by saparating comma without space.
     output : str
         The path for storing output file. If user doesn't specify the path,
         It saves the output in the DataLab_test/output/ path. (default is '')
@@ -71,15 +72,18 @@ def proc_3d_main(dat_src: str,
     # Check the sanity of the data path when it is main.
     if __name__ == "__main__":
         pipe = 'proc_3d'
-        dat_src, _, dat_key = get_data_info(pipe, dat_src, 
-                                            use_dat_ex=use_dat_ex, 
-                                            verbose=verbose)
+        dat_list, dat_key = get_data_info(pipe, dat_list, 
+                                          use_dat_ex=use_dat_ex, 
+                                          verbose=verbose)
 
     # Loads pcd file.
-    pcd = pcd_loader([dat_src], verbose=verbose)
+    pcd = pcd_loader(dat_list, verbose=verbose)
 
     # Get the all points.
-    pcd.get_pts(use_np=True) # Store the points in a NumPy array.
+    # For this 3d process test, I only choose first pcd data in the list for the
+    # calculation. In the real case, the script need to be smarter to do 
+    # calculation for all the input files.
+    pcd.get_pts(pcd_dat_idx=0, use_np=True) # Store the points in a NumPy array.
     pts = pcd.pts # 3d points in 2d array. Shape: (# of points, xyz)
  
     # Constructs the 3d process class. 

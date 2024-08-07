@@ -22,17 +22,19 @@ from pcd_register.tools.utility import h5_savor
 
 @click.command()
 @click.option('-p', '--pipe', type = str)
-@click.option('-l', '--dat_list', default='', type=str)
+@click.option('-s', '--dat_src', default='', type=str)
+@click.option('-t', '--dat_tar', default='', type=str)
 @click.option('-o', '--output', default='', type=str)
 @click.option('-i', '--index', default=0, type=int)
 @click.option('-r', '--radius', default=0.1, type=float)
 @click.option('-v', '--verbose', default=False, type=bool)
 @click.option('-e', '--use_dat_ex', default=False, type=bool)
-@click.option('-d', '--use_debug', default=False, type=bool)
+@click.option('-u', '--use_debug', default=False, type=bool)
 @click.pass_context
 def main(ctx: click.core.Context, 
          pipe: str,
-         dat_list: str,
+         dat_src: str,
+         dat_tar: str,
          output: str,
          index: int,
          radius: float,
@@ -48,11 +50,11 @@ def main(ctx: click.core.Context,
         by the Click command. 
     pipe : str
         The name of the pipeline. regi (registration) or proc_3d (3d process).
-    dat_list : str
-        The list of input file paths (default is ''). User can input multiple
-        files by saparating comma without space. By doing this way, we can do 
-        registration with multiple source and target files.
-        We could just put the list of files into text file and use it for input.
+    dat_src : str
+        The input source file path (default is ''). 
+        In case of the proc_3d option, use dat_src for input file option.
+    dat_tar : str
+        The input target file path (default is '').
     output : str
         The path for storing output file. If user doesn't specify the path,
         It saves the output in the DataLab_test/output/ path (default is '').
@@ -73,31 +75,33 @@ def main(ctx: click.core.Context,
     """
 
     # Check the sanity of the data path.
-    dat_list, dat_key = get_data_info(pipe, dat_list, use_dat_ex, 
-                                      verbose) 
-     
+    dat_src, dat_tar, dat_key = get_data_info(pipe, dat_src, dat_tar, 
+                                              use_dat_ex, verbose) 
+    
     # Choose script based on the `pipe` option.
     module = import_module(f'pcd_register.wrappers.{pipe}_wrappers')
     method = getattr(module, f'{pipe}_main')
 
-    # Excute the relevant pipeline and create file name of output.
-    if pipe == 'proc_3d': # for 3d process
+    # Excute the relevant pipeline.
+    if pipe == 'proc_3d':
         results = ctx.invoke(
-            method, dat_list=dat_list, output=output, index=index,
+            method, dat_src=dat_src, output=output, index=index,
             radius=radius, verbose=verbose, use_dat_ex=use_dat_ex, 
             use_debug=use_debug)
-        file_name = f'{dat_key}_{pipe}_idx{index}_rad{radius}.h5'
-    elif pipe == 'regi': # for registration
+    elif pipe == 'regi':
         results = ctx.invoke(
-            method, dat_list=dat_list, output=output, verbose=verbose, 
-            use_dat_ex=use_dat_ex, use_debug=use_debug)
-        file_name = f'{dat_key}_{pipe}.h5'
+            method, dat_src=dat_src, dat_tar=dat_tar, output=output,
+            verbose=verbose, use_dat_ex=use_dat_ex, use_debug=use_debug)
     else:
         print('Something is wrong in the pipeline name!')
         sys.exit(1)
     
     # Until I confirm the conventional file format for saving the results,
     # it will be saved in the hdf5 format.
+    if pipe == 'proc_3d':
+        file_name = f'{dat_key}_{pipe}_idx{index}_rad{radius}.h5'
+    elif pipe == 'regi':
+        file_name = f'{dat_key}_{pipe}.h5'
     h5_savor(output, file_name, results, verbose=verbose)
     
 if __name__ == "__main__":

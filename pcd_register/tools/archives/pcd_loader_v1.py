@@ -13,19 +13,22 @@ import numpy as np
 import open3d as o3d
 
 def get_data_info(pipe: str,
-                  dat_list: str,
+                  dat_src: str,
+                  dat_tar: str = '',
                   use_dat_ex: bool = False,
                   verbose: bool = False) -> str:
     """Checks input files are pcd format or not. If one of the input file is not 
-    pcd format, exit the script. If use_dat_ex is True, the dat_list will be  
-    overwritten by ICP dataset.
+    pcd format, exit the script. If use_dat_ex is True, the dat_src and dat_tar 
+    will be overwritten by ICP dataset.
 
     Parameters
     ----------
     pipe: str
         The name of the pipeline. regi (registration) or proc_3d (3d process).
-    dat_list : str
-        The list of input file paths.
+    dat_src : str
+        The input source file path.
+    dat_tar : str
+        The input target file path (default is '').
     use_dat_ex : bool
         Boolean statement for using example ICP dataset (default is False).
     verbose : bool
@@ -33,40 +36,49 @@ def get_data_info(pipe: str,
 
     Returns
     -------
-    dat_list: str
-        The modified list of input paths after sanity check.
+    dat_src: str
+        The modified input source path after sanity check.
+    dat_tar: str
+        The modified input target path after sanity check.
     dat_key : str
         The keyward to discribe the data.
     """
 
     # Check example option and replace data path if it is true.
     if use_dat_ex:
-        dat_list = o3d.data.DemoICPPointClouds().paths
+        icp_paths = o3d.data.DemoICPPointClouds().paths[:2] # only 2 paths
+        dat_src = icp_paths[0]
+        dat_tar = icp_paths[1]
         dat_key = 'icp'
     else:
-        # Saparates by comma
-        dat_list = dat_list.split(',') 
-        dat_key_list = []        
-
         # First, check whether string has same end with '.pcd'.
         pos_formats = ('.pcd', '.ply')
-        for dat in dat_list:
-            if not dat.endswith(pos_formats):
-                print('Something is wrong in the input file!')
-                sys.exit(1)   
-
-            # Use file names for the data keyward.
-            file_name = os.path.splitext(os.path.basename(dat))[0]
-            dat_key_list.append(file_name)
-
-        dat_key = '_'.join(dat_key_list)
+        is_pcd_src = dat_src.endswith(pos_formats)
+        # If pipeline is registration, then we actually check the sanity of 
+        # input target file.
+        if pipe == 'regi':
+            is_pcd_tar = dat_tar.endswith(pos_formats)
+        else:
+            is_pcd_tar = True
         
+        if not is_pcd_src or not is_pcd_tar:
+            print('Something is wrong in the input file!')
+            sys.exit(1)
+        else:
+            # Use file names for the data keyward.
+            dat_src_key = os.path.splitext(os.path.basename(dat_src))[0]
+            dat_key = f'{dat_src_key}'
+            if pipe == 'regi': # Add taget file name into keyward.
+                dat_tar_key = os.path.splitext(os.path.basename(dat_tar))[0]
+                dat_key += f'_{dat_tar_key}'
+    
     if verbose:
-        for idx, dat in enumerate(dat_list):
-            print(f'Data path #{idx}: {dat}')
+        print(f'Source data path: {dat_src}')
+        if pipe == 'regi':
+            print(f'Target data path: {dat_tar}')
         print(f'Data keyword: {dat_key}')
 
-    return dat_list, dat_key
+    return dat_src, dat_tar, dat_key
     
 
 class pcd_loader:
@@ -111,31 +123,30 @@ class pcd_loader:
         # Load the all 3d data
         self.pcd_list = []
         for idx, indi in enumerate(data):
-            pcd_indi = o3d.io.read_point_cloud(indi)
-            self.pcd_list.append(pcd_indi)
+            self.pcd_list.append(o3d.io.read_point_cloud(indi))
             if self.verbose:
                 print(f'Input file: {indi}')
             
-            # If file is empty exit the script
-            if pcd_indi.is_empty():
+            # If file is empty exit the script/
+            if self.pcd_list[idx].is_empty():
                 print('Something is wrong in the input file!')
                 sys.exit(1)
     
-    def get_pts(self, pcd_dat_idx: int = 0, use_np: bool = False):
+    def get_pts(self, pcd_idx: int = 0, use_np: bool = False):
         """Extract the informations from pcd file and wrap with NumPy array
 
         Parameters
         ----------
-        pcd_dat_idx : int
+        pcd_idx : int
             The index for pcd data list (default is 0).
         use_np : bool
             Boolean statement to wrap the point information with 
             NumPy array (default is False)
         """        
         
-        self.pts = self.pcd_list[pcd_dat_idx].points
-        self.col = self.pcd_list[pcd_dat_idx].colors
-        self.nor = self.pcd_list[pcd_dat_idx].normals
+        self.pts = self.pcd_list[pcd_idx].points
+        self.col = self.pcd_list[pcd_idx].colors
+        self.nor = self.pcd_list[pcd_idx].normals
         if use_np:
             self.pts = np.asarray(self.pts, dtype = float)
             self.col = np.asarray(self.col, dtype = float)
