@@ -19,6 +19,7 @@ curr_path = os.getcwd()
 sys.path.append(curr_path + '/../')
 from tools.pcd_loader import get_data_info
 from tools.pcd_loader import pcd_loader
+from tools.regi_loader import regi_loader
 from tools.utility import h5_savor
 
 # The arguments are controlled by the click package.
@@ -68,45 +69,13 @@ def regi_main(dat_list: str,
                                           verbose=verbose)
 
     # Loads pcd file.
-    # For this registration test, I only choose first two pcd data in the list 
-    # for the calculation. In the real case, the script need to be smarter to do 
-    # calculation for all the input files.
     pcd = pcd_loader(dat_list, verbose=verbose)
-    pcd_src = pcd.pcd_list[0] # source pcd file.
-    pcd_tar = pcd.pcd_list[1] # target pcd file.
 
-    pts_np = np.asarray(pcd_src.points)
+    # For this registration test, I only choose first two pcd data in the list
+    # for the calculation. In the real case, the script need to be smarter to do
+    # calculation for all the input files.
+    pcd_list = pcd.pcd_list[:2] # source and target pcd files.
 
-    print(np.asarray(pcd_src.points).shape)
-    dis = np.asarray(pcd_src.compute_nearest_neighbor_distance())
-    print(dis.shape)
-    print(np.nanmean(dis))
-    print(np.nanmedian(dis))
-    print(np.nanstd(dis))
-    print(np.nanmin(dis))
-    print(np.nanmax(dis))
-
-    bbox = pcd_src.get_axis_aligned_bounding_box()
-    bbox_extent = bbox.get_extent()
-    initial_voxel_size = np.mean(bbox_extent) / 32
-    print(bbox)
-
-    print(np.nanmin(pts_np, axis = 0))
-    print(np.nanmax(pts_np, axis = 0))
-    print(bbox_extent)
-    print(initial_voxel_size)
-
-    dis_len = len(dis)
-    dis_idx = int(float(dis_len) * 0.95)
-    dis_sort = np.sort(dis)
-    dis_95 = dis_sort[dis_idx]
-    medi = np.nanmedian(dis)
-    print()
-    print(dis_idx)
-    print(dis_95)
-    print(dis_sort[dis_idx - 10 : dis_idx + 10])
-    print(medi)
-    print(dis_95 - medi)
 
 
     

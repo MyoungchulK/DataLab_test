@@ -4,8 +4,7 @@ import open3d as o3d
 class regi_loader:
 
     def __init__(self, 
-                 pcd_src,
-                 pod_tar,
+                 pcd_list,
                  verbose: bool = False, 
                  use_debug: bool = False): 
 
@@ -13,43 +12,74 @@ class regi_loader:
         self.use_debug = use_debug
 
         # make self for the two pcd files
-        self.pcd_src = pcd_src
-        self.pcd_tar = pcd_tar
+        self.pcd_list = pcd_list
+        self.pcd_list_len = len(self.pcd_list)
 
-    def get_voxel_from_bbox(self, pcd, num_bins: float = 64, use_numpy: bool = False):
+    def get_KDTree_params(self, radius, max_nn):
+    
+        return o3d.geometry.KDTreeSearchParamHybrid(radius=radius, max_nn=max_nn)
 
-        # If output of the function is not bounded by open3d format and calculation is simple, We could just use NumPy. 
-        # NumPy uses the C for the for loop, It would outcome same speed.
-        # It might be more beneficial if we have to do this calculation multiple time.
-        if use_numpy:
-            pcd_np = np.asarray(pcd.points, dtype = float)
-            voxel_size = np.nanmean(np.nanmax(pcd_np, axis=0) - np.nanmin(pcd_np, axis=0)) / num_bins
-            del pcd_np
-        else
-            # Get the position of the point that touchs the bbox
-            bbox = pcd.get_axis_aligned_bounding_box()
+    def get_down_samp(self, pcd_idx, voxel_size, radius_down, max_nn_down):
+        
+        params_down = self.get_KDTree_params(radius_down, max_nn_down) 
+        
+        pcd_down = self.pcd_list[pcd_idx].voxel_down_sample(voxel_size)
+        pcd_down.estimate_normals(params_down)
+        del params_down
 
-            # Get the length of the bbox
-            bbox_size = bbox.get_extent()
+        return pcd_down
 
-            # Voxel size by dividing the bbox
-            voxel_size = np.nanmean(bbox_size) / num_bins
-            del bbox, bbox_size
+    def get_fpfh(self, radius_fpfh, max_nn_fpfh):
+
+        params_fpfh = self.get_KDTree_params(radius_fpfh, max_nn_fpfh)
+
+        pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
+            self.pcd_indi_down, params_fpfn)
+        del params_fpfh
+
+        return pcd_fpfh
+
+    def get_voxel_from_grid(self, pcd_idx, num_bins):
+
+        bbox = self.pcd_list[pcd_idx].get_axis_aligned_bounding_box()
+        bbox_size = bbox.get_extent()
+        voxel_size = np.nanmean(bbox_size) / num_bins
+        #pcd_np = np.asarray(self.pcd_list[pcd_idx].points, dtype = float)
+        #voxel_size = np.nanmean(np.nanmax(pcd_np, axis=0) \
+        #             - np.nanmin(pcd_np, axis=0)) / num_bins
+        del bbox, bbox_size
 
         return voxel_size
 
-    def get_down_sample(self, user_voxel_size = np.nan):
+    def get_pre_process(
+            self, 
+            src_idx: int,
+            trans_init = np.full((4, 4), np.nan, dtype = float),
+            voxel_size: float = np.nan,
+            num_bins: float = 64):
 
-        if np.isnan(user_voxel_size):
-            src_vs = self.get_voxel_from_bbox(self.pcd_src)
-            tar_vs = self.get_voxel_from_bbox(self.pcd_tar)
-        else:
-            src_vs = user_voxel_size
-            tar_vs = user_voxel_size
+        is_nan_init = np.any(np.isnan(trans_init))
+        is_nan_voxel = np.isnan(voxel_size)        
 
-        pcd_src_down = self.pcd_src.voxel_down_sample(src_vs)
-        pcd_tar_down = self.pcd_tar.voxel_down_sample(tar_vs)
+        self.pcd_down = []
+        self.pcd_fpfh = []
+        for idx in tqdm(range(self.pcd_list_len), 
+                              disable = ~self.use_debug):
+            if idx == src_idx and not is_nan_init:
+                self.pcd_list[pcd_idx].transform(trans_init)
 
+            if is_nan_voxel:
+                voxel_size = self.get_voxel_from_grid(idx, num_bins)
+        
+            radius_down = voxel_size * 2
+            self.pcd_indi_down = self.get_down_samp(idx, voxel_size, 
+                                                    radius_down, 30) 
+            self.pcd_down.append(self.pcd_indi_down)          
+ 
+            radius_fpfh = voxel_size * 5
+            pcd_indi_fpfh = self.get_fpfh(radius_fpfh, 100)
+            self.pcd_fpfh.append(pcd_indi_fpfh)
+            
 
 
 
