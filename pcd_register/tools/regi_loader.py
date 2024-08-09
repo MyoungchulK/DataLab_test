@@ -1,5 +1,6 @@
 import numpy as np
 import open3d as o3d
+from tqdm import tqdm
 
 class regi_loader:
 
@@ -22,7 +23,7 @@ class regi_loader:
     def get_down_samp(self, pcd_idx, voxel_size, radius_down, max_nn_down):
         
         params_down = self.get_KDTree_params(radius_down, max_nn_down) 
-        
+ 
         pcd_down = self.pcd_list[pcd_idx].voxel_down_sample(voxel_size)
         pcd_down.estimate_normals(params_down)
         del params_down
@@ -34,7 +35,7 @@ class regi_loader:
         params_fpfh = self.get_KDTree_params(radius_fpfh, max_nn_fpfh)
 
         pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
-            self.pcd_indi_down, params_fpfn)
+            self.pcd_indi_down, params_fpfh)
         del params_fpfh
 
         return pcd_fpfh
@@ -44,6 +45,11 @@ class regi_loader:
         bbox = self.pcd_list[pcd_idx].get_axis_aligned_bounding_box()
         bbox_size = bbox.get_extent()
         voxel_size = np.nanmean(bbox_size) / num_bins
+        
+        if self.use_debug:
+            self.box_points = bbox.get_box_points()
+            self.box_min_max_bound = np.array([bbox.get_min_bound(), 
+                                               bbox.get_max_bound()])
         #pcd_np = np.asarray(self.pcd_list[pcd_idx].points, dtype = float)
         #voxel_size = np.nanmean(np.nanmax(pcd_np, axis=0) \
         #             - np.nanmin(pcd_np, axis=0)) / num_bins
@@ -56,32 +62,74 @@ class regi_loader:
             src_idx: int,
             trans_init = np.full((4, 4), np.nan, dtype = float),
             voxel_size: float = np.nan,
-            num_bins: float = 64):
+            num_bins: float = 64,
+            rad_down: float = np.nan,
+            rad_fpfh: float = np.nan,
+            rad_down_fac: float = 2,
+            rad_fpfh_fac: float = 5,
+            max_nn_down: int = 30,
+            max_nn_fpfh: int = 100):
 
         is_nan_init = np.any(np.isnan(trans_init))
-        is_nan_voxel = np.isnan(voxel_size)        
+        is_nan_voxel = np.isnan(voxel_size)
+        is_nan_rad_down = np.isnan(rad_down)       
+        is_nan_rad_fpfh = np.isnan(rad_fpfh)       
+        if self.verbose:
+            print(f'Source file index is {src_idx}') 
+            if is_nan_init:
+                print(f'There is no initial guess for the transformation.')
+            else:
+                print(f'Trans init array: \n{trans_init}')
 
         self.pcd_down = []
         self.pcd_fpfh = []
-        for idx in tqdm(range(self.pcd_list_len), 
-                              disable = ~self.use_debug):
+        if self.use_debug:
+            self.src_idx = src_idx
+            self.trans_init = trans_init
+            self.voxels = np.full((self.pcd_list_len), np.nan, dtype = float)
+            self.rads = np.full((self.pcd_list_len, 2), np.nan, dtype = float)
+            self.max_nns = np.copy(self.rads)
+            self.box_pts = np.full((self.pcd_list_len, 8, 3), np.nan, \
+                                    dtype = float)
+            self.box_min_max = np.full((self.pcd_list_len, 2, 3), np.nan, \
+                                        dtype = float)
+        for idx in tqdm(range(self.pcd_list_len), disable = ~self.use_debug):
             if idx == src_idx and not is_nan_init:
-                self.pcd_list[pcd_idx].transform(trans_init)
+                self.pcd_list[idx].transform(trans_init)
 
             if is_nan_voxel:
                 voxel_size = self.get_voxel_from_grid(idx, num_bins)
-        
-            radius_down = voxel_size * 2
+                if self.use_debug:
+                    self.box_pts[idx] = self.box_points
+                    self.box_min_max[idx] = self.box_min_max_bound       
+ 
+            if is_nan_rad_down:
+                rad_down = voxel_size * rad_down_fac
             self.pcd_indi_down = self.get_down_samp(idx, voxel_size, 
-                                                    radius_down, 30) 
+                                                    rad_down, max_nn_down) 
             self.pcd_down.append(self.pcd_indi_down)          
  
-            radius_fpfh = voxel_size * 5
-            pcd_indi_fpfh = self.get_fpfh(radius_fpfh, 100)
+            if is_nan_rad_fpfh:
+                rad_fpfh = voxel_size * rad_fpfh_fac 
+            pcd_indi_fpfh = self.get_fpfh(rad_fpfh, max_nn_fpfh)
             self.pcd_fpfh.append(pcd_indi_fpfh)
-            
-
-
+        
+            if self.verbose:
+                print(f'File #{idx} preporc summary')
+                print(f'Voxel size: {np.round(voxel_size, 2)}')           
+                print(f'Radius for down sampling: {np.round(rad_down, 2)}') 
+                print(f'Radius for fpfh: {np.round(rad_fpfh, 2)}')
+                print(f'Original {self.pcd_list[idx]}')
+                print(f'Down sampled {self.pcd_indi_down}')
+                print(f'FPFH {pcd_indi_fpfh}')
+    
+            if self.use_debug:
+                self.voxels[idx] = voxel_size
+                self.rads[idx, 0] = rad_down
+                self.rads[idx, 1] = rad_fpfh
+                self.max_nns[idx, 0] = max_nn_down
+                self.max_nns[idx, 1] = max_nn_fpfh
+            del voxel_size, rad_down, rad_fpfh 
 
 
 

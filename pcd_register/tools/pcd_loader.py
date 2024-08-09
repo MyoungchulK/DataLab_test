@@ -114,7 +114,7 @@ class pcd_loader:
             pcd_indi = o3d.io.read_point_cloud(indi)
             self.pcd_list.append(pcd_indi)
             if self.verbose:
-                print(f'Input file: {indi}')
+                print(f'Input file #{idx}: {indi}')
             
             # If file is empty exit the script
             if pcd_indi.is_empty():

@@ -76,7 +76,13 @@ def regi_main(dat_list: str,
     # calculation for all the input files.
     pcd_list = pcd.pcd_list[:2] # source and target pcd files.
 
+    # Constructs the class
+    regi = regi_loader(pcd_list, verbose=verbose, use_debug=use_debug)
 
+    # Performs pre processing
+    regi.get_pre_process(0)
+    pcd_down = regi.pcd_down
+    pcd_fpfh = regi.pcd_fpfh
 
     
     return {"1":np.array([1])}
@@ -93,7 +99,7 @@ def regi_main(dat_list: str,
     """
 if __name__ == "__main__":
 
-    proc_3d_main()
+    regi_main()
 
 
 
