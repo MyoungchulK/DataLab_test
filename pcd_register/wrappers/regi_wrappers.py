@@ -84,7 +84,10 @@ def regi_main(dat_list: str,
     pcd_down = regi.pcd_down
     pcd_fpfh = regi.pcd_fpfh
 
-    
+    # RANSAC registration
+    ransac_regi = regi.get_ransac_regi(0, 1) 
+    print(ransac_regi.transformation)    
+
     return {"1":np.array([1])}
     """
     if __name__ == "__main__":

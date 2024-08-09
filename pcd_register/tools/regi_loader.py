@@ -15,6 +15,10 @@ class regi_loader:
         # make self for the two pcd files
         self.pcd_list = pcd_list
         self.pcd_list_len = len(self.pcd_list)
+        if self.verbose:
+            for idx, pcds in enumerate(self.pcd_list):
+                print(f'Input pcd file #{idx}: {pcds}')
+        self.pipe_regi = o3d.pipelines.registration
 
     def get_KDTree_params(self, radius, max_nn):
     
@@ -83,10 +87,10 @@ class regi_loader:
 
         self.pcd_down = []
         self.pcd_fpfh = []
+        self.voxels = np.full((self.pcd_list_len), np.nan, dtype = float)
         if self.use_debug:
             self.src_idx = src_idx
             self.trans_init = trans_init
-            self.voxels = np.full((self.pcd_list_len), np.nan, dtype = float)
             self.rads = np.full((self.pcd_list_len, 2), np.nan, dtype = float)
             self.max_nns = np.copy(self.rads)
             self.box_pts = np.full((self.pcd_list_len, 8, 3), np.nan, \
@@ -102,6 +106,7 @@ class regi_loader:
                 if self.use_debug:
                     self.box_pts[idx] = self.box_points
                     self.box_min_max[idx] = self.box_min_max_bound       
+            self.voxels[idx] = voxel_size
  
             if is_nan_rad_down:
                 rad_down = voxel_size * rad_down_fac
@@ -116,20 +121,60 @@ class regi_loader:
         
             if self.verbose:
                 print(f'File #{idx} preporc summary')
-                print(f'Voxel size: {np.round(voxel_size, 2)}')           
-                print(f'Radius for down sampling: {np.round(rad_down, 2)}') 
-                print(f'Radius for fpfh: {np.round(rad_fpfh, 2)}')
-                print(f'Original {self.pcd_list[idx]}')
-                print(f'Down sampled {self.pcd_indi_down}')
-                print(f'FPFH {pcd_indi_fpfh}')
+                print(f'  Voxel size: {np.round(voxel_size, 2)}')           
+                print(f'  Radius for down sampling: {np.round(rad_down, 2)}') 
+                print(f'  Radius for fpfh: {np.round(rad_fpfh, 2)}')
+                print(f'  Down sampled {self.pcd_indi_down}')
+                print(f'  FPFH {pcd_indi_fpfh}')
     
             if self.use_debug:
-                self.voxels[idx] = voxel_size
                 self.rads[idx, 0] = rad_down
                 self.rads[idx, 1] = rad_fpfh
                 self.max_nns[idx, 0] = max_nn_down
                 self.max_nns[idx, 1] = max_nn_fpfh
             del voxel_size, rad_down, rad_fpfh 
+
+    def get_ransac_regi(self, 
+                        src_idx: int,
+                        tar_idx: int,
+                        dis_thres: float = np.nan,
+                        dis_thres_fac: float = 1.5,
+                        mutual_filt: bool = True,
+                        ratio: float = 0.9,
+                        max_iter: int = 100000,
+                        confi: float = 0.999,
+                        scaling: bool = False):
+
+        if np.isnan(dis_thres):
+            dis_thres = np.nanmean(self.voxels) * dis_thres_fac
+
+        pt_to_pt = self.pipe_regi.TransformationEstimationPointToPoint(scaling)
+        edge_len = self.pipe_regi.CorrespondenceCheckerBasedOnEdgeLength(ratio)
+        dis = self.pipe_regi.CorrespondenceCheckerBasedOnDistance(dis_thres)
+        criteria = self.pipe_regi.RANSACConvergenceCriteria(max_iter, confi)
+
+        result = self.pipe_regi.registration_ransac_based_on_feature_matching(
+            self.pcd_down[src_idx], self.pcd_down[tar_idx],
+            self.pcd_fpfh[src_idx], self.pcd_fpfh[tar_idx],
+            mutual_filt, dis_thres, 
+            pt_to_pt, 3, [edge_len, dis], criteria)
+
+        return result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
