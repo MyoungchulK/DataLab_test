@@ -6,7 +6,7 @@
     "radius":0.1,
     "verbose":true,
     "use_dat_ex":true,
-    "use_debug":true,
+    "use_debug":false,
     "use_KDTree":false
 }
 """

@@ -84,8 +84,7 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
         # Save the results.
         # Until I confirm the conventional file format for saving the results,
         # it will be saved in the hdf5 format.
-        file_name = f'{dat_key}_{pipe}.h5'
-        h5_savor(output, file_name, results, verbose=verbose)
+        h5_savor(dat_dict, results)
     else: 
         # Return the results.
         return results

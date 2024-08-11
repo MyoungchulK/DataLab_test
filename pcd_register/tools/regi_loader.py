@@ -18,48 +18,160 @@ class regi_loader:
         self.pcd_list_len = len(self.pcd_list)
         if self.verbose:
             for idx, pcds in enumerate(self.pcd_list):
+                # Check input file information.
                 print(f'Input pcd file #{idx}: {pcds}')
+
+        # Make instance for the o3d.pipelines.registration library
+        # We could just load this by the import command at the begining.
         self.pipe_regi = o3d.pipelines.registration
+
+        # Place holder for the transformation maxtrix of ransac registration.
+        # It will be used for icp registration.
         self.reg_ran_trans = np.full((4, 4), np.nan, dtype=float)
 
-    def get_KDTree_params(self, radius, max_nn):
-    
-        return o3d.geometry.KDTreeSearchParamHybrid(radius=radius, max_nn=max_nn)
+    def get_KDTree_params(
+            self, 
+            radius: float, 
+            max_nn: int
+            ) -> o3d.cpu.pybind.geometry.KDTreeSearchParamHybrid:
+        """KDTree search parameters for hybrid KNN and radius search.
+        It is bit redundant function since it just wrap the
+        KDTreeSearchParamHybrid function.       
 
-    def get_down_samp(self, pcd_idx, voxel_size, radius_down, max_nn_down):
-        
+        Parameters
+        ----------
+        radius : float
+            It will look for the bin within radius. 
+        max_nn : int
+            The distance for searching the neighboring bin.
+ 
+        Returns
+        -------
+        kdt_params : o3d.cpu.pybind.geometry.KDTreeSearchParamHybrid
+            Contains paramaters in the open3d format.
+        """   
+
+        # Set the paramter based on the inputs.
+        kdt_params = o3d.geometry.KDTreeSearchParamHybrid(
+            radius=radius, max_nn=max_nn)
+
+        return kdt_params
+
+    def get_down_samp(
+            self, 
+            pcd_idx: int, 
+            voxel_size: float, 
+            radius_down: float, 
+            max_nn_down: int
+            ) -> o3d.geometry.PointCloud:
+        """Function to downsample input pointcloud into output pointcloud with 
+        a voxel. Normals and colors are averaged if they exist.
+
+        Parameters
+        ----------
+        pcd_idx : int
+            The index of the pcd file list. It will select the file from the list
+            based on the index.
+        voxel_size : float
+            Voxel size to downsample into.
+        radius_down : float
+            The radius limitation for the KDTree function.
+        max_nn_down : int
+            The neighboring bin limitation for the KDTree function.
+
+        Returns
+        -------
+        pcd_down : o3d.geometry.PointCloud
+            Contain the information of the 3d points in the open3d format.
+        """       
+
+        # Wrap the parameter in the open3d format. 
         params_down = self.get_KDTree_params(radius_down, max_nn_down) 
  
+        # Down sample based on the pcd file and vexel size.
         pcd_down = self.pcd_list[pcd_idx].voxel_down_sample(voxel_size)
+
+        # Function to compute the normals of a point cloud. 
+        # Normals are oriented with respect to the input point cloud if normals 
+        # exist.        
         pcd_down.estimate_normals(params_down)
         del params_down
 
         return pcd_down
 
-    def get_fpfh(self, radius_fpfh, max_nn_fpfh):
+    def get_fpfh(
+            self, 
+            radius_fpfh: float, 
+            max_nn_fpfh: int
+            ) -> o3d.pipelines.registration.Feature:
+        """Function to compute FPFH feature for a point cloud.
 
+        Parameters
+        ----------
+        radius_fpfh : float
+            The radius limitation for the KDTree function.
+        max_nn_fpfh: int
+            The neighboring bin limitation for the KDTree function.
+
+        Returns 
+        -------
+        pcd_fpfh : o3d.pipelines.registration.Feature
+            Contains 33 dimension of FPFH feature in the open3d format.
+        """
+
+        # Wrap the parameter in the open3d format.
         params_fpfh = self.get_KDTree_params(radius_fpfh, max_nn_fpfh)
 
+        # Calculates the FPFH feature based on the input parameters.
         pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
             self.pcd_indi_down, params_fpfh)
         del params_fpfh
 
         return pcd_fpfh
 
-    def get_voxel_from_grid(self, pcd_idx, num_bins):
+    def get_voxel_from_grid(self, pcd_idx: int, num_bins: float) -> float:
+        """Calculates voxel size based on the bounding box size and the input 
+        binning. It will be only activated if user didn't set the voxel size.
 
+        Parameters
+        ----------
+        pcd_idx : int
+            The index of the pcd file list. It will select the file from the list
+            based on the index.
+        num_bins : float
+            The number of bins that user want to divide the bounding box.
+
+        Returns
+        -------
+        voxel_size : float
+            Returns the voxel size that calculated based on the bounding box grid
+            and the input binning.
+        """
+
+        # Selects the pcd file and calculate edge points that touching the 
+        # bound box.
         bbox = self.pcd_list[pcd_idx].get_axis_aligned_bounding_box()
+
+        # Calculates the size of the bounding box
         bbox_size = bbox.get_extent()
+
+        # Calculates the voxel size by averaging the size of the bins.
         voxel_size = np.nanmean(bbox_size) / num_bins
-        
+       
+        # Stores the box inforamtion if user want to see the middle step. 
         if self.use_debug:
-            self.box_points = bbox.get_box_points()
+            self.box_points = bbox.get_box_points() # The box edge points
+            # The edge points that touching the bound box.
             self.box_min_max_bound = np.array([bbox.get_min_bound(), 
                                                bbox.get_max_bound()])
-        #pcd_np = np.asarray(self.pcd_list[pcd_idx].points, dtype = float)
-        #voxel_size = np.nanmean(np.nanmax(pcd_np, axis=0) \
-        #             - np.nanmin(pcd_np, axis=0)) / num_bins
         del bbox, bbox_size
+
+        # Since the calcultion is simple, we could just use NumPy to do the job. 
+        """
+        pcd_np = np.asarray(self.pcd_list[pcd_idx].points, dtype = float)
+        voxel_size = np.nanmean(np.nanmax(pcd_np, axis=0) \
+                     - np.nanmin(pcd_np, axis=0)) / num_bins
+        """
 
         return voxel_size
 
@@ -67,7 +179,7 @@ class regi_loader:
             self, 
             src_idx: int,
             tar_idx: int,
-            trans_init = np.full((4, 4), np.nan, dtype=float),
+            trans_init: np.ndarray = np.full((4, 4), np.nan, dtype=float),
             voxel_size: float = np.nan,
             num_bins: float = 64,
             rad_down: float = np.nan,
@@ -76,52 +188,128 @@ class regi_loader:
             rad_fpfh_fac: float = 5,
             max_nn_down: int = 30,
             max_nn_fpfh: int = 100):
+        """Performs the preprocess by calling down sample and fpfh feature 
+        functions. It will call the data that stored in the pcd_list. By doing
+        this, we will not do the unecessary data copy that can happen during the
+        function execution. Since preprocessing is almost identical between the
+        source and target file, it is done by the for loop. The only differnce is
+        when we process the soruce file, we will apply the initial transformation
+        guess. The calculation step is 1) get voxel size, 2) perform down sample,
+        and 3) obtain fpfh feature.
 
+        Parameters
+        ----------
+        src_idx : int        
+            The index of the source pcd file from the list. It will select the 
+            file from the list based on the index.
+        tar_idx : int
+            The index of the target pcd file from the list. It will select the
+            file from the list based on the index.
+        trans_init : np.ndarray
+            The initial transformation guess (The default is the nan array).
+        voxel_size : float
+            The input voxel size by the user (The default is nan). 
+        num_bins : float
+            The number of bins that user want to divide the bounding box. It will
+            be only used if user didn't set the voxel size.
+        rad_down : float
+            The radius limitation for the KDTree function in the down sampling
+            function (The default is nan).
+        rad_fpfh : float
+            The radius limitation for the KDTree function in the fpfh feature
+            function (The default is nan).
+        rad_down_fac : flaot
+            The radius factor for the down sampling. If user didn't specify the
+            radius for the down sampling, It will be calculated by product of
+            the radius factor and voxel size (The default is 2).
+        rad_fpfh_fac : float
+            The radius factor for the fpfh feature. If user didn't specify the 
+            radius for fpfh feature, It will be calculated by product of the
+            radius factor and voxel size (The default is 5).
+        max_nn_down : int
+            The neighboring bin limitation for the KDTree function in the down
+            sampling function (The default is 30).
+        max_nn_fpfh : int
+            The neighboring bin limitation for the KDTree function in the fpfh
+            feature function (The default is 100).
+        """
+
+        # Create the bool statements for choosing conditions.
+        # I used NumPy sum for checking whether the array is including the nan.
+        # I could use np.any(np.isnan(trans_init)) for the process. But based on
+        # the wisdom of the internet, applying np.isnan to all element in the 
+        # array is way slower than just sum and then apply np.isnan once. If 
+        # array has nan, simple np.sum (not np.nansum) will be consumed by the 
+        # even single nan. 
         is_nan_init = np.isnan(np.sum(trans_init))
         is_nan_voxel = np.isnan(voxel_size)
         is_nan_rad_down = np.isnan(rad_down)       
-        is_nan_rad_fpfh = np.isnan(rad_fpfh)       
+        is_nan_rad_fpfh = np.isnan(rad_fpfh)      
+
         if self.verbose:
             print(f'Source file index is {src_idx}') 
+            # Checks the transformation is set by user or not. 
             if is_nan_init:
                 print(f'There is no initial guess for the transformation.')
             else:
                 print(f'Trans init array: \n{trans_init}')
 
+        # Begining of the preprocessing. Each voxel size, down sampling, and 
+        # fpfh feature calculations will be applied to pcd data one by one.
+        # The lists to store the results
         self.pcd_down = []
         self.pcd_fpfh = []
+
+        # Voxel size is stored per pcd file in case user didn't set the vexel
+        # size. If it didn't, it will have a different size per pcd file.
         self.voxels = np.full((self.pcd_list_len), np.nan, dtype=float)
+
+        # Stores the secondary information If user want to see what is happening
+        # during the calculation.
         if self.use_debug:
-            self.src_idx = src_idx
-            self.trans_init = trans_init
+            self.src_idx = src_idx # The index of the source pcd file.
+            self.trans_init = trans_init # The initial guess for transformation.
             self.rads = np.full((self.pcd_list_len, 2), np.nan, dtype=float)
             self.max_nns = np.copy(self.rads)
             self.box_pts = np.full((self.pcd_list_len, 8, 3), np.nan, \
                                     dtype=float)
             self.box_min_max = np.full((self.pcd_list_len, 2, 3), np.nan, \
                                         dtype=float)
+        
+        # The tqdm is for user to check the process. In this assignment, we only
+        # use two file. But If we do process for multiple files, It will be good
+        # to see the progress at the terminal.
         for idx in tqdm(range(self.pcd_list_len), disable = ~self.use_debug):
+            
+            # Applys the transformation with initial guess to only source file by
+            # idx == src_idx condition if user specify it.
             if idx == src_idx and not is_nan_init:
                 self.pcd_list[idx].transform(trans_init)
 
+            # Calcualtes voxel size.
             if is_nan_voxel:
                 voxel_size = self.get_voxel_from_grid(idx, num_bins)
                 if self.use_debug:
                     self.box_pts[idx] = self.box_points
                     self.box_min_max[idx] = self.box_min_max_bound       
-            self.voxels[idx] = voxel_size
- 
+            self.voxels[idx] = voxel_size # stores the voxel size.
+
+            # Performs the down sampling based on the radius and max_nn 
+            # parameter. 
             if is_nan_rad_down:
                 rad_down = voxel_size * rad_down_fac
             self.pcd_indi_down = self.get_down_samp(idx, voxel_size, 
                                                     rad_down, max_nn_down) 
             self.pcd_down.append(self.pcd_indi_down)          
- 
+
+            # Performs the fpfh feature based on the radius and max_nn
+            # parameter. 
             if is_nan_rad_fpfh:
                 rad_fpfh = voxel_size * rad_fpfh_fac 
             pcd_indi_fpfh = self.get_fpfh(rad_fpfh, max_nn_fpfh)
             self.pcd_fpfh.append(pcd_indi_fpfh)
-        
+       
+            # print quick summary if user want to see it. 
             if self.verbose:
                 print(f'File #{idx} preporc summary')
                 print(f'  Voxel size: {np.round(voxel_size, 2)}')           
@@ -129,17 +317,22 @@ class regi_loader:
                 print(f'  Radius for fpfh: {np.round(rad_fpfh, 2)}')
                 print(f'  Down sampled {self.pcd_indi_down}')
                 print(f'  FPFH {pcd_indi_fpfh}')
-    
+   
+            # Stores the parameters if user want to check the middle step. 
             if self.use_debug:
                 self.rads[idx, 0] = rad_down
                 self.rads[idx, 1] = rad_fpfh
                 self.max_nns[idx, 0] = max_nn_down
                 self.max_nns[idx, 1] = max_nn_fpfh
-            del voxel_size, rad_down, rad_fpfh 
+            del voxel_size, rad_down, rad_fpfh
+
+        # Draws the results of the down sampling. 
         if self.use_debug:
             self.draw_regi_result(self.pcd_down[src_idx],
                                   self.pcd_down[tar_idx],
                                   np.identity(4, dtype=float))
+        
+        # Calculates the average voxel size for both registration process.
         self.voxel_avg = np.nanmean(self.voxels)
 
     def get_ransac_regi(self, 
