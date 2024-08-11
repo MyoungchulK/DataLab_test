@@ -1,5 +1,6 @@
 import numpy as np
 import open3d as o3d
+import copy
 from tqdm import tqdm
 
 class regi_loader:
@@ -65,6 +66,7 @@ class regi_loader:
     def get_pre_process(
             self, 
             src_idx: int,
+            tar_idx: int,
             trans_init = np.full((4, 4), np.nan, dtype=float),
             voxel_size: float = np.nan,
             num_bins: float = 64,
@@ -134,6 +136,10 @@ class regi_loader:
                 self.max_nns[idx, 0] = max_nn_down
                 self.max_nns[idx, 1] = max_nn_fpfh
             del voxel_size, rad_down, rad_fpfh 
+        if self.use_debug:
+            self.draw_regi_result(self.pcd_down[src_idx],
+                                  self.pcd_down[tar_idx],
+                                  np.identity(4, dtype=float))
         self.voxel_avg = np.nanmean(self.voxels)
 
     def get_ransac_regi(self, 
@@ -154,6 +160,10 @@ class regi_loader:
         edge_len = self.pipe_regi.CorrespondenceCheckerBasedOnEdgeLength(ratio)
         dis = self.pipe_regi.CorrespondenceCheckerBasedOnDistance(dis_thres)
         criteria = self.pipe_regi.RANSACConvergenceCriteria(max_iter, confi)
+        print(pt_to_pt)
+        print(edge_len)
+        print(dis)
+        print(criteria)
 
         reg_ran = self.pipe_regi.registration_ransac_based_on_feature_matching(
             self.pcd_down[src_idx], self.pcd_down[tar_idx],
@@ -161,6 +171,12 @@ class regi_loader:
             mutual_filt, dis_thres, 
             pt_to_pt, 3, [edge_len, dis], criteria)
         self.reg_ran_trans = reg_ran.transformation
+        print(reg_ran)
+
+        if self.use_debug:
+            self.draw_regi_result(self.pcd_down[src_idx], 
+                                  self.pcd_down[tar_idx],
+                                  self.reg_ran_trans)
 
         return reg_ran
 
@@ -188,19 +204,48 @@ class regi_loader:
         else:  
             tans_est = self.pipe_regi.TransformationEstimationPointToPlane()
         criteria = self.pipe_regi.ICPConvergenceCriteria(max_iteration=max_iter)
-        
+        print(tans_est)
+        print(criteria)        
+
         reg_icp = self.pipe_regi.registration_icp(
             self.pcd_list[src_idx], self.pcd_list[tar_idx], 
             dis_thres, trans_init,
             tans_est, criteria)
+        print(reg_icp)
+
+        if self.use_debug:
+            self.draw_regi_result(self.pcd_list[src_idx],
+                                  self.pcd_list[tar_idx],
+                                  reg_icp.transformation)
 
         return reg_icp 
 
+    def draw_regi_result(self, 
+                         src_pcd,
+                         tar_pcd,
+                         trans = np.identity(4, dtype=float)):
 
+        src_temp = copy.deepcopy(src_pcd)
+        tar_temp = copy.deepcopy(tar_pcd)
+        src_temp.paint_uniform_color([1, 0.706, 0])
+        tar_temp.paint_uniform_color([0, 0.651, 0.929])
+        src_temp.transform(trans)
+        o3d.visualization.draw_geometries([src_temp, tar_temp],
+                                          zoom=0.4459,
+                                          front=[0.6452, -0.3036, -0.7011],
+                                          lookat=[1.9892, 2.0208, 1.8945],
+                                          up=[-0.2779, -0.9482, 0.1556])
 
-
-
-
+        """
+        vis = o3d.visualization.Visualizer()
+        vis.create_window(visible=False) #works for me with False, on some systems needs to be true
+        vis.add_geometry(your_mesh)
+        vis.update_geometry(your_mesh)
+        vis.poll_events()
+        vis.update_renderer()
+        vis.capture_screen_image(your_png_path)
+        vis.destroy_window()
+        """
 
 
 

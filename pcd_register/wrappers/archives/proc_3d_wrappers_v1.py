@@ -22,23 +22,46 @@ from tools.utility import h5_savor
 
 # The arguments are controlled by the click package.
 @click.command()
-@click.option('-v', '--dat_var', default='', type=str)
-@click.option('-d', '--dat_dict', default={'':''}, type=dict)
-def proc_3d_main(dat_var: str, dat_dict: dict) -> dict: 
+@click.option('-l', '--dat_list', default='', type=str)
+@click.option('-o', '--output', default='', type=str)
+@click.option('-i', '--index', default=0, type=int)
+@click.option('-r', '--radius', default=0.1, type=float)
+@click.option('-v', '--verbose', default=False, type=bool)
+@click.option('-e', '--use_dat_ex', default=False, type=bool)
+@click.option('-d', '--use_debug', default=False, type=bool)
+def proc_3d_main(dat_list: str,
+                 output: str, 
+                 index: int, 
+                 radius: float, 
+                 verbose: bool, 
+                 use_dat_ex: bool,
+                 use_debug: bool) -> dict:
     """Designed to call necessary classes for calculation. If it is executed by
     itself, It will save the results in hdf5 format. If not, It will return the
     results in a dictionary format.
 
     Parameters
     ----------
-    dat_var : str
-        The text file path that contains all the variables for the pipeline 
-        process (default is ''). User can control the script by changing the 
-        contents of the text file. By doing this way, we don't have to create
-        infinite arguments at the terminal. The variables will be stored in the
-        dictionary. If dat_var is empty, use icp examples in the examples path. 
-    dat_dict : dict
-        The variables for the pipeline process.
+    dat_list : str
+        The list of input file paths (default is ''). User can input multiple
+        files by saparating comma without space.
+    output : str
+        The path for storing output file. If user doesn't specify the path,
+        It saves the output in the DataLab_test/output/ path. (default is '')
+    index : int
+        The index for selecting the point (default is 0)
+    radius : float
+        The boundary condition to select the neighboring points
+        (default is 0.1)
+    verbose : bool
+        Boolean statement to control the print (default is False)
+    use_dat_ex : bool
+        Boolean statement for using example ICP dataset (default is False)
+        If use_dat_ex is True, the dat_src and dat_tar will be overwritten by
+        ICP dataset.
+    use_debug : bool
+        By changing its to True, use can check and svae the all middle step
+        of the calculation. It is useful for the debugging (default is False)
 
     Returns
     -------
@@ -48,12 +71,13 @@ def proc_3d_main(dat_var: str, dat_dict: dict) -> dict:
 
     # Check the sanity of the data path when it is main.
     if __name__ == "__main__":
-        dat_dict = get_data_info(dat_var)
-    verbose = dat_dict['verbose']
-    use_debug = dat_dict['use_debug']
+        pipe = 'proc_3d'
+        dat_list, dat_key = get_data_info(pipe, dat_list, 
+                                          use_dat_ex=use_dat_ex, 
+                                          verbose=verbose)
 
     # Loads pcd file.
-    pcd = pcd_loader(dat_dict['dat_list'], verbose=verbose)
+    pcd = pcd_loader(dat_list, verbose=verbose)
 
     # Get the all points.
     # For this 3d process test, I only choose first pcd data in the list for the
@@ -65,11 +89,10 @@ def proc_3d_main(dat_var: str, dat_dict: dict) -> dict:
     # Constructs the 3d process class. 
     proc_3d = proc_3d_loader(verbose=verbose, 
                              use_debug=use_debug, 
-                             use_KDTree=dat_dict['use_KDTree']) 
+                             use_KDTree=False) 
 
     # Perform the calculations.
-    index = dat_dict['index']
-    proc_3d.get_3d_process(pts, dat_dict['index'], dat_dict['radius'])  
+    proc_3d.get_3d_process(pts, index, radius)  
     covar_mtx = proc_3d.pts_nei_cov # The covariance matrix.
     approx_curv = np.array([proc_3d.pts_nei_curv]) # The approximate curvature.
     proj_pts = proc_3d.pts_nei_proj # The projection of point to the plane.
@@ -101,7 +124,8 @@ def proc_3d_main(dat_var: str, dat_dict: dict) -> dict:
         # Save the results.
         # Until I confirm the conventional file format for saving the results,
         # it will be saved in the hdf5 format.
-        h5_savor(dat_dict, results)
+        file_name = f'{dat_key}_{pipe}_idx{index}_rad{radius}.h5'
+        h5_savor(output, file_name, results, verbose=verbose)
     else: 
         # Return the results.
         return results

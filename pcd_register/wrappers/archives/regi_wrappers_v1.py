@@ -24,23 +24,37 @@ from tools.utility import h5_savor
 
 # The arguments are controlled by the click package.
 @click.command()
-@click.option('-v', '--dat_var', default='', type=str)
-@click.option('-d', '--dat_dict', default={'':''}, type=dict)
-def regi_main(dat_var: str, dat_dict: dict) -> dict:
+@click.option('-l', '--dat_list', default='', type=str)
+@click.option('-o', '--output', default='', type=str)
+@click.option('-v', '--verbose', default=False, type=bool)
+@click.option('-e', '--use_dat_ex', default=False, type=bool)
+@click.option('-d', '--use_debug', default=False, type=bool)
+def regi_main(dat_list: str,
+              output: str, 
+              verbose: bool, 
+              use_dat_ex: bool,
+              use_debug: bool) -> dict:
     """Designed to call necessary classes for calculation. If it is executed by
     itself, It will save the results in pcd ot hdf5 format. If not, It will 
     return the results in a dictionary format.
 
     Parameters
     ----------
-    dat_var : str
-        The text file path that contains all the variables for the pipeline 
-        process (default is ''). User can control the script by changing the 
-        contents of the text file. By doing this way, we don't have to create
-        infinite arguments at the terminal. The variables will be stored in the
-        dictionary. If dat_var is empty, use icp examples in the examples path. 
-    dat_dict : dict
-        The variables for the pipeline process.
+    dat_list : str
+        The list of input file paths (default is ''). User can input multiple
+        files by saparating comma without space.
+    output : str
+        The path for storing output file. If user doesn't specify the path,
+        It saves the output in the DataLab_test/output/ path. (default is '')
+    verbose : bool
+        Boolean statement to control the print (default is False)
+    use_dat_ex : bool
+        Boolean statement for using example ICP dataset (default is False)
+        If use_dat_ex is True, the dat_src and dat_tar will be overwritten by
+        ICP dataset.
+    use_debug : bool
+        By changing its to True, use can check and svae the all middle step
+        of the calculation. It is useful for the debugging (default is False)
 
     Returns
     -------
@@ -50,11 +64,12 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
 
     # Check the sanity of the data path when it is main.
     if __name__ == "__main__":
-        dat_dict = get_data_info(dat_var)
-    verbose = dat_dict['verbose']
-    
+        pipe = 'regi'
+        dat_list, dat_key = get_data_info(pipe, dat_list, use_dat_ex=use_dat_ex, 
+                                          verbose=verbose)
+
     # Loads pcd file.
-    pcd = pcd_loader(dat_dict['dat_list'], verbose=verbose)
+    pcd = pcd_loader(dat_list, verbose=verbose)
 
     # For this registration test, I only choose first two pcd data in the list
     # for the calculation. In the real case, the script need to be smarter to do
@@ -62,8 +77,7 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
     pcd_list = pcd.pcd_list[:2] # source and target pcd files.
 
     # Constructs the class
-    regi = regi_loader(pcd_list, verbose=verbose, 
-                       use_debug=dat_dict['use_debug'])
+    regi = regi_loader(pcd_list, verbose=verbose, use_debug=use_debug)
 
     # Performs pre processing
     regi.get_pre_process(0, 1)

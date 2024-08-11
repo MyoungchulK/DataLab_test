@@ -1,0 +1,40 @@
+{
+    "pipe_name":"proc_3d",
+    "dat_list":"",
+    "output":"/Users/mkim/code/DataLab_test/outputs/icp_proc_3d_idx0_rad0.1.h5",
+    "index":0,
+    "radius":0.1,
+    "verbose":true,
+    "use_dat_ex":true,
+    "use_debug":true,
+    "use_KDTree":false
+}
+"""
+Parameters
+pipe_name : str
+    The name of the pipeline. regi (registration) or proc_3d (3d process).
+dat_list : list  
+    The list of input file paths (default is ''). User can input multiple
+    files by saparating comma. By doing this way, we can do registration 
+    with multiple source and target files.
+output : str
+    The path for storing output file. If user doesn't specify the path,
+    It saves the output in the DataLab_test/output/ path.
+index : int
+    The index for selecting the point (default is 0).
+radius : float
+    The boundary condition to select the neighboring points.
+    (default is 0.1)
+verbose : bool
+    Boolean statement to control the print (default is False).
+use_dat_ex : bool
+    Boolean statement for using example ICP dataset (default is False).
+    If use_dat_ex is True, the dat_src and dat_tar will be overwritten by
+    ICP dataset.
+use_debug : bool
+    By changing its to True, use can check and svae the all middle step
+    of the calculation. It is useful for the debugging (default is False).
+use_KDTree : bool
+    If it is True, the 3d process will use KDTree class to identifying
+    neighboring bins within the radius. In the default, it will use NumPy. 
+"""

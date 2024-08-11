@@ -9,62 +9,64 @@ and normals in a NumPy array format.
 
 import os
 import sys
-import json
 import numpy as np
 import open3d as o3d
 
-# custom lib
-curr_path = os.getcwd()
-sys.path.append(curr_path + '/../')
-from tools.utility import get_tools_abspath
-
-def get_data_info(dat_var : str) -> dict:
-    """Extracts the variables in the text file and store in the dictionary.
-    Checks input files are pcd format or not. If one of the input file is not
+def get_data_info(pipe: str,
+                  dat_list: str,
+                  use_dat_ex: bool = False,
+                  verbose: bool = False) -> str:
+    """Checks input files are pcd format or not. If one of the input file is not 
     pcd format, exit the script. If use_dat_ex is True, the dat_list will be  
     overwritten by ICP dataset.
 
     Parameters
     ----------
-    dat_var : str
-        The text file path that contains all the variables for the pipeline 
-        process (default is '').
+    pipe: str
+        The name of the pipeline. regi (registration) or proc_3d (3d process).
+    dat_list : str
+        The list of input file paths.
+    use_dat_ex : bool
+        Boolean statement for using example ICP dataset (default is False).
+    verbose : bool
+        Boolean statement to control the print (default is False).
 
     Returns
     -------
-    dat_dict : dict
-        The variables for the pipeline process.
+    dat_list: str
+        The modified list of input paths after sanity check.
+    dat_key : str
+        The keyward to discribe the data.
     """
-    
-    # If dat_var is empty, use icp examples in the examples path.
-    if len(dat_var) == 0:
-        code_path = get_tools_abspath()
-        file_path = f'../../examples/icp_var_ex.txt'
-        dat_var = os.path.join(code_path, file_path) 
-
-    # Opens the text file and stores in the dictionary.
-    with open(dat_var, 'r') as f:
-        data = f.read()
-        dict_idx = data.find('"""')
-    dat_dict = json.loads(data[:dict_idx])
 
     # Check example option and replace data path if it is true.
-    if dat_dict['use_dat_ex']:
-        dat_dict['dat_list'] = o3d.data.DemoICPPointClouds().paths
+    if use_dat_ex:
+        dat_list = o3d.data.DemoICPPointClouds().paths
+        dat_key = 'icp'
     else:
+        # Saparates by comma
+        dat_list = dat_list.split(',') 
+        dat_key_list = []        
+
         # First, check whether string has same end with '.pcd'.
         pos_formats = ('.pcd', '.ply')
-        for dat in dat_dict['dat_list']:
+        for dat in dat_list:
             if not dat.endswith(pos_formats):
                 print('Something is wrong in the input file!')
                 sys.exit(1)   
 
-    # Check the variables in the dictionary.
-    if dat_dict['verbose']:
-        print(f'Data variable path: {dat_var}')
-        print(json.dumps(dat_dict, indent=4))
+            # Use file names for the data keyward.
+            file_name = os.path.splitext(os.path.basename(dat))[0]
+            dat_key_list.append(file_name)
 
-    return dat_dict
+        dat_key = '_'.join(dat_key_list)
+        
+    if verbose:
+        for idx, dat in enumerate(dat_list):
+            print(f'Data path #{idx}: {dat}')
+        print(f'Data keyword: {dat_key}')
+
+    return dat_list, dat_key
     
 
 class pcd_loader:
