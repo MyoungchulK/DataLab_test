@@ -21,7 +21,7 @@ from pcd_register.tools.pcd_loader import get_data_info
 from pcd_register.tools.utility import h5_savor
 
 @click.command()
-@click.option('-p', '--pipe', type = str)
+@click.option('-p', '--pipe', type=str)
 @click.option('-l', '--dat_list', default='', type=str)
 @click.option('-o', '--output', default='', type=str)
 @click.option('-i', '--index', default=0, type=int)

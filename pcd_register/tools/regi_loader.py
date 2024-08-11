@@ -65,7 +65,7 @@ class regi_loader:
     def get_pre_process(
             self, 
             src_idx: int,
-            trans_init = np.full((4, 4), np.nan, dtype = float),
+            trans_init = np.full((4, 4), np.nan, dtype=float),
             voxel_size: float = np.nan,
             num_bins: float = 64,
             rad_down: float = np.nan,
@@ -88,16 +88,16 @@ class regi_loader:
 
         self.pcd_down = []
         self.pcd_fpfh = []
-        self.voxels = np.full((self.pcd_list_len), np.nan, dtype = float)
+        self.voxels = np.full((self.pcd_list_len), np.nan, dtype=float)
         if self.use_debug:
             self.src_idx = src_idx
             self.trans_init = trans_init
-            self.rads = np.full((self.pcd_list_len, 2), np.nan, dtype = float)
+            self.rads = np.full((self.pcd_list_len, 2), np.nan, dtype=float)
             self.max_nns = np.copy(self.rads)
             self.box_pts = np.full((self.pcd_list_len, 8, 3), np.nan, \
-                                    dtype = float)
+                                    dtype=float)
             self.box_min_max = np.full((self.pcd_list_len, 2, 3), np.nan, \
-                                        dtype = float)
+                                        dtype=float)
         for idx in tqdm(range(self.pcd_list_len), disable = ~self.use_debug):
             if idx == src_idx and not is_nan_init:
                 self.pcd_list[idx].transform(trans_init)

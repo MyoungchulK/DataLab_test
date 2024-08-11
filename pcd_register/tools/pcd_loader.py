@@ -137,6 +137,7 @@ class pcd_loader:
         self.col = self.pcd_list[pcd_dat_idx].colors
         self.nor = self.pcd_list[pcd_dat_idx].normals
         if use_np:
-            self.pts = np.asarray(self.pts, dtype = float)
-            self.col = np.asarray(self.col, dtype = float)
-            self.nor = np.asarray(self.nor, dtype = float)
+            # Since each property is tuple, use np.asarray() to access data.
+            self.pts = np.asarray(self.pts, dtype=float)
+            self.col = np.asarray(self.col, dtype=float)
+            self.nor = np.asarray(self.nor, dtype=float)

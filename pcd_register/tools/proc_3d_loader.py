@@ -192,7 +192,7 @@ class proc_3d_loader:
             del kdtree
         else:
             # Calculates the radius of all the points.
-            rad_all = np.sqrt(np.nansum((pts - self.pts_i) ** 2, axis=1))
+            rad_all = np.sqrt(np.nansum((pts-self.pts_i) ** 2, axis=1))
 
             # Get the boolean array based on the radius.
             # The elements that corresponds to the neighboring points
