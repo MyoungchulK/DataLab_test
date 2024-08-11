@@ -19,6 +19,7 @@ class regi_loader:
             for idx, pcds in enumerate(self.pcd_list):
                 print(f'Input pcd file #{idx}: {pcds}')
         self.pipe_regi = o3d.pipelines.registration
+        self.reg_ran_trans = np.full((4, 4), np.nan, dtype=float)
 
     def get_KDTree_params(self, radius, max_nn):
     
@@ -74,7 +75,7 @@ class regi_loader:
             max_nn_down: int = 30,
             max_nn_fpfh: int = 100):
 
-        is_nan_init = np.any(np.isnan(trans_init))
+        is_nan_init = np.isnan(np.sum(trans_init))
         is_nan_voxel = np.isnan(voxel_size)
         is_nan_rad_down = np.isnan(rad_down)       
         is_nan_rad_fpfh = np.isnan(rad_fpfh)       
@@ -133,6 +134,7 @@ class regi_loader:
                 self.max_nns[idx, 0] = max_nn_down
                 self.max_nns[idx, 1] = max_nn_fpfh
             del voxel_size, rad_down, rad_fpfh 
+        self.voxel_avg = np.nanmean(self.voxels)
 
     def get_ransac_regi(self, 
                         src_idx: int,
@@ -146,24 +148,53 @@ class regi_loader:
                         scaling: bool = False):
 
         if np.isnan(dis_thres):
-            dis_thres = np.nanmean(self.voxels) * dis_thres_fac
+            dis_thres = self.voxel_avg * dis_thres_fac
 
         pt_to_pt = self.pipe_regi.TransformationEstimationPointToPoint(scaling)
         edge_len = self.pipe_regi.CorrespondenceCheckerBasedOnEdgeLength(ratio)
         dis = self.pipe_regi.CorrespondenceCheckerBasedOnDistance(dis_thres)
         criteria = self.pipe_regi.RANSACConvergenceCriteria(max_iter, confi)
 
-        result = self.pipe_regi.registration_ransac_based_on_feature_matching(
+        reg_ran = self.pipe_regi.registration_ransac_based_on_feature_matching(
             self.pcd_down[src_idx], self.pcd_down[tar_idx],
             self.pcd_fpfh[src_idx], self.pcd_fpfh[tar_idx],
             mutual_filt, dis_thres, 
             pt_to_pt, 3, [edge_len, dis], criteria)
+        self.reg_ran_trans = reg_ran.transformation
 
-        return result
+        return reg_ran
 
+    def get_icp_regi(self,
+                     src_idx: int,
+                     tar_idx: int,
+                     dis_thres: float = np.nan,
+                     dis_thres_fac: float = 0.4,
+                     max_iter: int = 2000,
+                     trans_init = np.full((4, 4), np.nan, dtype=float),
+                     use_p2p: bool = False):
 
+        if np.isnan(dis_thres):
+            dis_thres = self.voxel_avg * dis_thres_fac
+       
+        if not np.isnan(np.sum(trans_init)):
+            pass
+        elif not np.isnan(np.sum(self.reg_ran_trans)):
+            trans_init = self.reg_ran_trans
+        else:
+            trans_init = np.identity(4, dtype=float)
+      
+        if use_p2p:
+            tans_est = self.pipe_regi.TransformationEstimationPointToPoint()
+        else:  
+            tans_est = self.pipe_regi.TransformationEstimationPointToPlane()
+        criteria = self.pipe_regi.ICPConvergenceCriteria(max_iteration=max_iter)
+        
+        reg_icp = self.pipe_regi.registration_icp(
+            self.pcd_list[src_idx], self.pcd_list[tar_idx], 
+            dis_thres, trans_init,
+            tans_est, criteria)
 
-
+        return reg_icp 
 
 
 
