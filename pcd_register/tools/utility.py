@@ -1,5 +1,6 @@
 """All the convenience functions are saved in here
 
+    * get_tools_abspath - Finds out the absolute path of the tools path
     * h5_savor - save the results in hdf5 format 
     * size_checker - check the size of the file 
 """

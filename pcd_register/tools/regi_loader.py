@@ -1,7 +1,14 @@
+import os
+import sys
 import numpy as np
 import open3d as o3d
 import copy
 from tqdm import tqdm
+
+# custom lib
+curr_path = os.getcwd()
+sys.path.append(curr_path + '/../')
+from tools.utility import size_checker
 
 class regi_loader:
 
@@ -326,12 +333,6 @@ class regi_loader:
                 self.max_nns[idx, 1] = max_nn_fpfh
             del voxel_size, rad_down, rad_fpfh
 
-        # Draws the results of the down sampling. 
-        if self.use_debug:
-            self.draw_regi_result(self.pcd_down[src_idx],
-                                  self.pcd_down[tar_idx],
-                                  np.identity(4, dtype=float))
-        
         # Calculates the average voxel size for both registration process.
         self.voxel_avg = np.nanmean(self.voxels)
 
@@ -365,11 +366,6 @@ class regi_loader:
             pt_to_pt, 3, [edge_len, dis], criteria)
         self.reg_ran_trans = reg_ran.transformation
         print(reg_ran)
-
-        if self.use_debug:
-            self.draw_regi_result(self.pcd_down[src_idx], 
-                                  self.pcd_down[tar_idx],
-                                  self.reg_ran_trans)
 
         return reg_ran
 
@@ -406,43 +402,95 @@ class regi_loader:
             tans_est, criteria)
         print(reg_icp)
 
-        if self.use_debug:
-            self.draw_regi_result(self.pcd_list[src_idx],
-                                  self.pcd_list[tar_idx],
-                                  reg_icp.transformation)
-
         return reg_icp 
 
-    def draw_regi_result(self, 
-                         src_pcd,
-                         tar_pcd,
-                         trans = np.identity(4, dtype=float)):
+def draw_regi_result(
+        src_pcd: o3d.geometry.PointCloud,
+        tar_pcd: o3d.geometry.PointCloud,
+        output: str,
+        trans: np.ndarray = np.identity(4, dtype=float),
+        width: int = 1920,
+        height: int = 1080,
+        src_color: list = [1, 0.706, 0],
+        tar_color: list = [0, 0.651, 0.929],
+        zoom: float = 0.4459,
+        front: list = [0.6452, -0.3036, -0.7011],
+        lookat: list = [1.9892, 2.0208, 1.8945],
+        up: list = [-0.2779, -0.9482, 0.1556],
+        verbose: bool = False):
+    """Draw the 3d results with transformation. Saves the drawing in the png 
+    format. The o3d.visualization.draw_geometries class has a no ability to the 
+    save the plot. So, I used o3d.visualization.Visualizer class for saving the
+    results into the plot.
 
-        src_temp = copy.deepcopy(src_pcd)
-        tar_temp = copy.deepcopy(tar_pcd)
-        src_temp.paint_uniform_color([1, 0.706, 0])
-        tar_temp.paint_uniform_color([0, 0.651, 0.929])
-        src_temp.transform(trans)
-        o3d.visualization.draw_geometries([src_temp, tar_temp],
-                                          zoom=0.4459,
-                                          front=[0.6452, -0.3036, -0.7011],
-                                          lookat=[1.9892, 2.0208, 1.8945],
-                                          up=[-0.2779, -0.9482, 0.1556])
+    Parameters
+    ----------
+    src_pcd : o3d.geometry.PointCloud
+        The source point cloud. 
+    tar_pcd : o3d.geometry.PointCloud
+        The target point cloud.
+    output : str
+        The output path for saving the drawing results.
+    trans : np.ndarray
+        The transformation maxtrix from the registration results (Default is 4x4
+        2d array).
+    width : int
+        The width of the canvas (Default is 1920).
+    height : int
+        The height of the canvas (Default is 1080). 
+    src_color : list
+        The color setting of the source point cloud. (Default is [1, 0.706, 0]).
+    tar_color : list
+        The color setting of the source point cloud. (Default is 
+        [0, 0.651, 0.929]).
+    zoom : float
+        The zoom of the camera (Default is 0.4459).
+    front : list
+        The front vector of the camera (Default is [0.6452, -0.3036, -0.7011]).
+    lookat : list
+        The lookat vector of the camera (Default is [1.9892, 2.0208, 1.8945]).
+    up : list
+        The up vector of the camera (Default is [-0.2779, -0.9482, 0.1556]).
+    verbose : bool
+        Boolean statement to control the print (Default is False).
+    """
 
-        """
-        vis = o3d.visualization.Visualizer()
-        vis.create_window(visible=False) #works for me with False, on some systems needs to be true
-        vis.add_geometry(your_mesh)
-        vis.update_geometry(your_mesh)
-        vis.poll_events()
-        vis.update_renderer()
-        vis.capture_screen_image(your_png_path)
-        vis.destroy_window()
-        """
+    # deep copy the pcd file so that color and transformation changes are not
+    # affected to actual data.
+    src_temp = copy.deepcopy(src_pcd)
+    tar_temp = copy.deepcopy(tar_pcd)
+    src_temp.paint_uniform_color(src_color) # reset the color of the points.
+    tar_temp.paint_uniform_color(tar_color)
+    src_temp.transform(trans) # transforms the points based on the result.
 
+    # Construct the Visualizer class.
+    vis = o3d.visualization.Visualizer()
+    vis.create_window(width=width, height=height, visible=False)
+        
+    # Add the points as a geometry.
+    vis.add_geometry(src_temp)
+    vis.add_geometry(tar_temp)
+        
+    # Set the point of the view.
+    view_control = vis.get_view_control()
+    view_control.set_zoom(zoom)
+    view_control.set_front(front)
+    view_control.set_lookat(lookat)
+    view_control.set_up(up)
 
+    # Update the visualization.
+    vis.poll_events()
+    vis.update_renderer()
+        
+    # Saves the image in the png format.
+    vis.capture_screen_image(output)
+        
+    # Remove the drawing for the sake of the memory.
+    vis.destroy_window()
 
-
+    # Print the message for saving the plot.
+    if verbose:
+        print(f'Output path: {output}. {size_checker(output)}')
 
 
 

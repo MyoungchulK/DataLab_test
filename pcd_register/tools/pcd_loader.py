@@ -3,8 +3,9 @@
 This script is designed to load the pcd file and provide the points, colors, 
 and normals in a NumPy array format.
 
-    * get_data_info - Checks input file is pcd format or not
-    * pcd_loader - Class that loading/reading a pcd file
+    * get_data_info - Checks input file is pcd format or not.
+    * save_pcd_info - Saves the point cloud information into the pcd format.
+    * pcd_loader - Class that loading/reading a pcd file.
 """
 
 import os
@@ -16,7 +17,7 @@ import open3d as o3d
 # custom lib
 curr_path = os.getcwd()
 sys.path.append(curr_path + '/../')
-from tools.utility import get_tools_abspath
+from tools.utility import get_tools_abspath, size_checker
 
 def get_data_info(dat_var : str) -> dict:
     """Extracts the variables in the text file and store in the dictionary.
@@ -66,6 +67,28 @@ def get_data_info(dat_var : str) -> dict:
 
     return dat_dict
     
+def save_pcd_info(pcd: o3d.geometry.PointCloud, 
+                  output: str, 
+                  verbose: bool = False):
+    """Saves the point cloud information into the pcd format.
+
+    Parameters
+    ----------
+    pcd : o3d.geometry.PointCloud
+        The point cloud information that need to be saved in the pcd format.
+    output : str
+        The output path for saving the drawing results.
+    verbose : bool
+        Boolean statement to control the print (Default is False).
+    """
+
+    # Saves the pcd infomation.
+    o3d.io.write_point_cloud(output, pcd, compressed=True, 
+                             print_progress=verbose)
+
+    # Print the message
+    if verbose:
+        print(f'Output path: {output}. {size_checker(output)}')
 
 class pcd_loader:
     """Designed to load the pcd file and provide the points, colors, 

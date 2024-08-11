@@ -2,12 +2,9 @@
     "pipe_name":"regi",
     "dat_list":"",
     "output":"/Users/mkim/code/DataLab_test/outputs/icp_regi.h5",
-    "index":0,
-    "radius":0.1,
     "verbose":true,
     "use_dat_ex":true,
-    "use_debug":false,
-    "use_KDTree":false
+    "use_debug":true
 }
 """
 Parameters
@@ -20,11 +17,6 @@ dat_list : list
 output : str
     The path for storing output file. If user doesn't specify the path,
     It saves the output in the DataLab_test/output/ path.
-index : int
-    The index for selecting the point (default is 0).
-radius : float
-    The boundary condition to select the neighboring points.
-    (default is 0.1)
 verbose : bool
     Boolean statement to control the print (default is False).
 use_dat_ex : bool
@@ -34,7 +26,4 @@ use_dat_ex : bool
 use_debug : bool
     By changing its to True, use can check and svae the all middle step
     of the calculation. It is useful for the debugging (default is False).
-use_KDTree : bool
-    If it is True, the 3d process will use KDTree class to identifying
-    neighboring bins within the radius. In the default, it will use NumPy. 
 """

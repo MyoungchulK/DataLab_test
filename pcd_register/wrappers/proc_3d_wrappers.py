@@ -15,8 +15,7 @@ import numpy as np
 # custom lib
 curr_path = os.getcwd()
 sys.path.append(curr_path + '/../')
-from tools.pcd_loader import get_data_info
-from tools.pcd_loader import pcd_loader
+from tools.pcd_loader import get_data_info, pcd_loader
 from tools.proc_3d_loader import proc_3d_loader
 from tools.utility import h5_savor
 

@@ -17,9 +17,8 @@ import numpy as np
 # custom lib
 curr_path = os.getcwd()
 sys.path.append(curr_path + '/../')
-from tools.pcd_loader import get_data_info
-from tools.pcd_loader import pcd_loader
-from tools.regi_loader import regi_loader
+from tools.pcd_loader import get_data_info, pcd_loader, save_pcd_info
+from tools.regi_loader import regi_loader, draw_regi_result
 from tools.utility import h5_savor
 
 # The arguments are controlled by the click package.
@@ -52,6 +51,7 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
     if __name__ == "__main__":
         dat_dict = get_data_info(dat_var)
     verbose = dat_dict['verbose']
+    output_dir = os.path.dirname(dat_dict['output'])
     
     # Loads pcd file.
     pcd = pcd_loader(dat_dict['dat_list'], verbose=verbose)
@@ -69,15 +69,38 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
     regi.get_pre_process(0, 1)
     pcd_down = regi.pcd_down
     pcd_fpfh = regi.pcd_fpfh
-
+   
     # RANSAC registration
     ransac_regi = regi.get_ransac_regi(0, 1) 
-    print(ransac_regi.transformation)    
 
     # ICP registration
-    icp_regi = regi.get_icp_regi(0, 1) 
-    print(icp_regi.transformation)
+    icp_regi = regi.get_icp_regi(0, 1)
     
+    # Saving the results of down sample, RANSAC, ICP
+    pcds = ['src', 'tar']
+    res = ['preprocess', 'ransac', 'icp']
+    results = [pcd_down, pcd_down, pcd_list]
+    tans = [np.identity(4, dtype=float), 
+            ransac_regi.transformation, 
+            icp_regi.transformation]
+    for re_indi in range(len(res)): # for loop for the results type.
+        # Saves in the png format.
+        plot_path = os.path.join(
+            output_dir, 
+            f'{res[re_indi]}_{dat_dict["pipe_name"]}.png')
+        draw_regi_result(results[re_indi][0], results[re_indi][1], plot_path,
+            trans=tans[re_indi], verbose=verbose)
+
+        for p_indi in range(len(pcds)): # for loop for source or target pcd.
+            if p_indi == 0: # apply transformation 
+                results[re_indi][p_indi].transform(tans[re_indi])
+
+            # Saves in pcd format.
+            file_path = os.path.join(
+                output_dir,
+                f'{res[re_indi]}_{dat_dict["pipe_name"]}_{pcds[p_indi]}.pcd') 
+            save_pcd_info(results[re_indi][p_indi], file_path, verbose=verbose) 
+
     return {"1":np.array([1])}
     """
     if __name__ == "__main__":
