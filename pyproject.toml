@@ -6,6 +6,7 @@ authors = ["Daisuke Sato <daisuke.sato@datalabs.jp>"]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"
+numpy = "^2.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
