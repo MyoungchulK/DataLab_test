@@ -378,7 +378,7 @@ class regi_loader:
             The index of the target pcd file from the list. It will select the
             file from the list based on the index.        
         dis_thres : float
-            The distance threshold for teh CorrespondenceCheckerBasedOnDistance()
+            The distance threshold for the CorrespondenceCheckerBasedOnDistance()
             class (Default is np.nan). 
         dis_thres_fac : flaot
             The distance threshold factor for the pruning step. If user didn't 
@@ -448,7 +448,7 @@ class regi_loader:
             # RMSE of all inlier correspondences.
             self.reg_ran_rmse = reg_ran.inlier_rmse
             # Correspondence set between source and target point cloud.
-            self.reg_ran_corr = correspondence_set
+            self.reg_ran_corr = reg_ran.correspondence_set
 
         # print quick summary if user want to see it. 
         if self.verbose:
@@ -467,27 +467,103 @@ class regi_loader:
                      max_iter: int = 2000,
                      trans_init = np.full((4, 4), np.nan, dtype=float),
                      use_p2p: bool = False):
+        """Performs ICP registration. This registration is based on the 
+        transformation matrix that obtained from the RANSAC registration. The    
+        process is applied to actual point cloud, which is larger dataset, the
+        initial guees of the transformation is necessary.
+        This registration is following the point-to-plane ICP algorithm. It 
+        exploits dot product between the normal vector of the target points and 
+        the vector that created by target points and the trasfomred source 
+        points. But by make use_p2p to True. User can also use point-to-point 
+        ICP algorithm.
+        The optimization is done by the hyperparameter of the function which are
+        controlling the maximum number of iterations.
+        As I addressed in the preprocessing step, the most of the parameters are
+        based on the empirical value. It is challenging to find the proper way to
+        set parameters, such as distance threshold, and number of iteration.
+        For now it is following the parameters from the examples, but in the futu
+        re, this should be optimized.
 
+        Parameters
+        ----------
+        src_idx : int   
+            The index of the source pcd file from the list. It will select the
+            file from the list based on the index.
+        tar_idx : int
+            The index of the target pcd file from the list. It will select the
+            file from the list based on the index.        
+        dis_thres : float
+            The distance threshold for the maximum correspondence between data
+            (Default is np.nan). 
+        dis_thres_fac : flaot
+            The distance threshold factor. If user didn't specify it, It will be
+            calculated by product of the factor and averaged voxel size from the
+            preprocessing (Default is 0.4).
+        max_iter : int
+            The hyperparameter for the minimization. It is the maximum limitation
+            of the number of iterations (Default is 2000).
+        trans_init : np.ndarray
+            The initial transformation guess (The default is the nan array).
+        use_p2p : bool
+            The boolean statement for controlling which estimation method user
+            will be used (Default is False).
+
+        Returns
+        -------
+        reg_icp : o3d.pipelines.registration.RegistrationResult
+            The results of the ICP registration in open3d format
+        """
+
+        # If user didn't set the threshold, use factor and averaged voxel size
+        # from the preprocessing.
         if np.isnan(dis_thres):
             dis_thres = self.voxel_avg * dis_thres_fac
        
+        # Set the initial guess of transformation matrix.
+        # If user didn't set it, it will use the value from ransac and the 
+        # identity maxtrix value. 
         if not np.isnan(np.sum(trans_init)):
             pass
         elif not np.isnan(np.sum(self.reg_ran_trans)):
             trans_init = self.reg_ran_trans
         else:
             trans_init = np.identity(4, dtype=float)
-      
+     
+        # Estimation method. Based on the use_p2p option, use can select. 
         if use_p2p:
+            # Estimate a transformation for point to point distance.
             tans_est = self.pipe_regi.TransformationEstimationPointToPoint()
         else:  
+            # Estimate a transformation for point to plane distance.
             tans_est = self.pipe_regi.TransformationEstimationPointToPlane()
+        
+        # Set the minimization hyperparameters for controlling number of 
+        # maximum iteration.
         criteria = self.pipe_regi.ICPConvergenceCriteria(max_iteration=max_iter)
-
+    
+        # Performs the ICP resigtration with the parameters.
         reg_icp = self.pipe_regi.registration_icp(
             self.pcd_list[src_idx], self.pcd_list[tar_idx], 
             dis_thres, trans_init,
             tans_est, criteria)
+        del tans_est, criteria
+
+        if self.use_debug:
+            # Transformation matrix.
+            self.reg_icp_trans = reg_icp.transformation
+            # The # of inlier correspondences / # of points in source.
+            self.reg_icp_fit = reg_icp.fitness
+            # RMSE of all inlier correspondences.
+            self.reg_icp_rmse = reg_icp.inlier_rmse
+            # Correspondence set between source and target point cloud.
+            self.reg_icp_corr = reg_icp.correspondence_set
+
+        # print quick summary if user want to see it. 
+        if self.verbose:
+            print('ICP registration summary')
+            print(reg_icp)
+            print('ICP transformation matrix:')
+            print(reg_icp.transformation)
 
         return reg_icp 
 
