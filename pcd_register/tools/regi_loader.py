@@ -18,9 +18,9 @@ import copy
 from tqdm import tqdm
 
 # custom lib
-curr_path = os.getcwd()
-sys.path.append(curr_path + '/../')
-from tools.utility import size_checker
+#curr_path = os.getcwd()
+#sys.path.append(curr_path + '/../')
+#from tools.utility import size_checker
 
 class regi_loader:
     """Designed to perform the preprocessing, RANSAC, and ICP registration.
@@ -794,7 +794,7 @@ def draw_regi_result(
 
     # Print the message for saving the plot.
     if verbose:
-        print(f'Output path: {output}. {size_checker(output)}')
+        print(f'Output path: {output}')# {size_checker(output)}')
 
 
 
