@@ -117,16 +117,34 @@ This package is developed from the `macOS` version `12.7.5`. In the future, it n
 
 In order to run this package, the below packages needed to be installed or added in the `pyproject.toml`.
 
-- `python >=3.10,<3.11`: A general Python package.
-- `numpy <2`: Fundamental package for array computing in Python.
-- `h5py ^3.11.0`: Read and write HDF5 files from Python.
-- `click ^8.1.7`: Composable command line interface toolkit.
-- `open3d ^0.18.0`: A Modern Library for 3D Data Processing.
-- `tqdm ^4.66.5`: Fast, Extensible Progress Meter.
+- `poetry`: A tool for dependency management and packaging in Python.
+- `python>=3.10,<3.11`: A general Python package.
+- `numpy<2`: Fundamental package for array computing in Python.
+- `h5py^3.11.0`: Read and write HDF5 files from Python.
+- `click^8.1.7`: Composable command line interface toolkit.
+- `open3d^0.18.0`: A Modern Library for 3D Data Processing.
+- `tqdm^4.66.5`: Fast, Extensible Progress Meter.
 
 ## Installation
 
-...
+The environment of the package is managed by the `poetry`. So, the first user needs to install the `poetry`.
+
+```
+pip install poetry
+```
+
+Second, users need to download this package from GitHub.
+
+```
+git clone git@github.com:MyoungchulK/DataLab_test.git
+```
+
+At last, go to the `DataLab_test` and execute the `poetry install` to install the software dependencies.
+
+```
+cd DataLab_test/
+poetry install
+```
 
 ## Usage
 
