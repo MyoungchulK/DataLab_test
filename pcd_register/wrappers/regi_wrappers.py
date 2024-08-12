@@ -39,7 +39,7 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
         infinite arguments at the terminal. The variables will be stored in the
         dictionary. If dat_var is empty, use icp examples in the examples path. 
     dat_dict : dict
-        The variables for the pipeline process.
+        The variables for the pipeline process (Default is {'':''}).
 
     Returns
     -------
@@ -83,15 +83,18 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
     tans = [np.identity(4, dtype=float), 
             ransac_regi.transformation, 
             icp_regi.transformation]
-    for re_indi in range(len(res)): # for loop for the results type.
+
+    # for loop for the results type.
+    for re_indi in range(len(res)):
         # Saves in the png format.
         plot_path = os.path.join(
             output_dir, 
             f'{res[re_indi]}_{dat_dict["pipe_name"]}.png')
         draw_regi_result(results[re_indi][0], results[re_indi][1], plot_path,
-            trans=tans[re_indi], verbose=verbose)
+                         trans=tans[re_indi], verbose=verbose)
 
-        for p_indi in range(len(pcds)): # for loop for source or target pcd.
+        # for loop for source or target pcd.
+        for p_indi in range(len(pcds)):
             if p_indi == 0: # apply transformation 
                 results[re_indi][p_indi].transform(tans[re_indi])
 

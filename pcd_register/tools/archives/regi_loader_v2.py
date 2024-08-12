@@ -196,20 +196,13 @@ class regi_loader:
             max_nn_down: int = 30,
             max_nn_fpfh: int = 100):
         """Performs the preprocess by calling down sample and fpfh feature 
-        functions. 
-        It will call the data that stored in the pcd_list. By doing this, we will
-        not do the unecessary data copy that can happen during the function 
-        execution. 
-        Since preprocessing is almost identical between the source and target 
-        file, it is done by the for loop. The only differnce is when we process 
-        the soruce file. Then, we will apply the initial transformation guess. 
-        The calculation step is 1) get voxel size, 2) perform down sample, and 3)
-        obtain fpfh feature.
-        There is no good document that explains what is the logical way to set 
-        (or how should we set) the voxel size, radius for down sampling and fpfh 
-        feature, including the neighboring bins for KDTree process. For now it is
-        following the parameters from the examples, but in the future, this 
-        should be optimized.
+        functions. It will call the data that stored in the pcd_list. By doing
+        this, we will not do the unecessary data copy that can happen during the
+        function execution. Since preprocessing is almost identical between the
+        source and target file, it is done by the for loop. The only differnce is
+        when we process the soruce file, we will apply the initial transformation
+        guess. The calculation step is 1) get voxel size, 2) perform down sample,
+        and 3) obtain fpfh feature.
 
         Parameters
         ----------
@@ -348,114 +341,31 @@ class regi_loader:
                         tar_idx: int,
                         dis_thres: float = np.nan,
                         dis_thres_fac: float = 1.5,
-                        #ang_thres: float = 2 * np.pi,
                         mutual_filt: bool = True,
                         ratio: float = 0.9,
                         max_iter: int = 100000,
                         confi: float = 0.999,
                         scaling: bool = False):
-        """Performs RANSAC registration. This registration is based on the down 
-        sampled dataset and fpfh feature that calculated from preprocessing step.
-        The fidning corresponding target points to the randomly selected source 
-        points are done by applying pruning algorithms for rejecting false 
-        matches in a early step. The only points that passed all pruning step
-        will be used for the registration process. 
-        The optimization is done by the hyperparameter of the function which are
-        controlling the maximum number of iterations and the confidence 
-        probability.
-        As I addressed in the preprocessing step, the most of the parameters are
-        based on the empirical value. It is challenging to find the proper way to
-        set parameters, such as distance threshold, ratio, number of iteration,
-        and confidence probability. For now it is following the parameters from 
-        the examples, but in the future, this should be optimized.
 
-        Parameters
-        ----------
-        src_idx : int   
-            The index of the source pcd file from the list. It will select the
-            file from the list based on the index.
-        tar_idx : int
-            The index of the target pcd file from the list. It will select the
-            file from the list based on the index.        
-        dis_thres : float
-            The distance threshold for teh CorrespondenceCheckerBasedOnDistance()
-            class (Default is np.nan). 
-        dis_thres_fac : flaot
-            The distance threshold factor for the pruning step. If user didn't 
-            specify it, It will be calculated by product of the factor and 
-            averaged voxel size from the preprocessing (Default is 1.5).
-        ang_thres : float
-            The angle threshold for the normal related pruning step. It is
-            currently disabled (Default is 2 * np.pi).
-        mutual_filt : bool
-            Enables mutual filter such that the correspondence of the source 
-            point’s correspondence is itself(Default is True).
-        ratio : float 
-            The ratio threshold for the edge length related pruning step 
-            (Default is 0.9).
-        max_iter : int
-            The hyperparameter for the minimization. It is the maximum limitation
-            of the number of iterations (Default is 100000). 
-        confi : float
-            The hyperparameter for the minimization. It is the limitation for
-            confidence probability of the fitness(Default is 0.999).
-        scaling : bool
-            The scaling threshold for the point to point estimation 
-            (Default is False).
-        
-        Returns
-        -------
-        reg_ran : o3d.pipelines.registration.RegistrationResult
-            The results of the RANSAC registration in open3d format
-        """
-
-        # Pruning algorithms
-        # Checks if the lengths of any two arbitrary edges from each point cloud
-        # are similar based on the ratio condition.
-        edge_len = self.pipe_regi.CorrespondenceCheckerBasedOnEdgeLength(ratio)
-
-        # Check if aligned point clouds are less than the threshold.
-        if np.isnan(dis_thres): # If user didn't set the threshold, use factor.
+        if np.isnan(dis_thres):
             dis_thres = self.voxel_avg * dis_thres_fac
-        dis = self.pipe_regi.CorrespondenceCheckerBasedOnDistance(dis_thres)
 
-        # Check if two aligned point clouds have less than the angle threshold.
-        # I couldn't find the general 'empirical' value for this step.  
-        # It is commented out for now.
-        #nor = self.pipe_regi.CorrespondenceCheckerBasedOnNormal(ang_thres)
-
-        # Method for estimate a transformation for point to point distance.
         pt_to_pt = self.pipe_regi.TransformationEstimationPointToPoint(scaling)
-
-        # Set the minimization hyperparameters for controlling number of 
-        # iteration and confidence probability.
+        edge_len = self.pipe_regi.CorrespondenceCheckerBasedOnEdgeLength(ratio)
+        dis = self.pipe_regi.CorrespondenceCheckerBasedOnDistance(dis_thres)
         criteria = self.pipe_regi.RANSACConvergenceCriteria(max_iter, confi)
+        print(pt_to_pt)
+        print(edge_len)
+        print(dis)
+        print(criteria)
 
-        # Performs the RANSAC resigtration with the parameters.
         reg_ran = self.pipe_regi.registration_ransac_based_on_feature_matching(
             self.pcd_down[src_idx], self.pcd_down[tar_idx],
             self.pcd_fpfh[src_idx], self.pcd_fpfh[tar_idx],
             mutual_filt, dis_thres, 
             pt_to_pt, 3, [edge_len, dis], criteria)
-            #pt_to_pt, 3, [edge_len, dis, nor], criteria)
-        del edge_len, dis, pt_to_pt, criteria#, nor
-
-        # Self the transformation matrix for ICP registration.
         self.reg_ran_trans = reg_ran.transformation
-        if self.use_debug:
-            # The # of inlier correspondences / # of points in source.
-            self.reg_ran_fit = reg_ran.fitness
-            # RMSE of all inlier correspondences.
-            self.reg_ran_rmse = reg_ran.inlier_rmse
-            # Correspondence set between source and target point cloud.
-            self.reg_ran_corr = correspondence_set
-
-        # print quick summary if user want to see it. 
-        if self.verbose:
-            print('Ransac registration summary')
-            print(reg_ran)
-            print('Ransac transformation matrix:')
-            print(self.reg_ran_trans)
+        print(reg_ran)
 
         return reg_ran
 
@@ -483,11 +393,14 @@ class regi_loader:
         else:  
             tans_est = self.pipe_regi.TransformationEstimationPointToPlane()
         criteria = self.pipe_regi.ICPConvergenceCriteria(max_iteration=max_iter)
+        print(tans_est)
+        print(criteria)        
 
         reg_icp = self.pipe_regi.registration_icp(
             self.pcd_list[src_idx], self.pcd_list[tar_idx], 
             dis_thres, trans_init,
             tans_est, criteria)
+        print(reg_icp)
 
         return reg_icp 
 

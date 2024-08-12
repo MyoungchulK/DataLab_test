@@ -37,7 +37,7 @@ def proc_3d_main(dat_var: str, dat_dict: dict) -> dict:
         infinite arguments at the terminal. The variables will be stored in the
         dictionary. If dat_var is empty, use icp examples in the examples path. 
     dat_dict : dict
-        The variables for the pipeline process.
+        The variables for the pipeline process (Default is {'':''}).
 
     Returns
     -------
