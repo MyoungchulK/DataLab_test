@@ -208,6 +208,13 @@ From 3d process pipelie:
 - `pts_i`: The point with an index `i`.
 - `pts_nei`: The neighboring points within the radius `r` at a point `i`.
 
+For the pytest, the user can use the `poetry run pytest` to execute the scripts in the `tests/` path. Each script will test the output of the class.
+
+```
+poetry run pytest tests/test_regi.py # For the registration pipeline
+poetry run pytest tests/test_proc_3d.py # For the 3d process pipeline
+```
+
 # DataLab_test
 
 
