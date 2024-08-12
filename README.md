@@ -154,7 +154,7 @@ User can execute the 2 pipelines by `main.py` in the `DataLab_test/` path or ind
  
 If you execute the script by `main.py`, the package will choose the pipeline based on the option stored in text files in the `DataLab_test/examples` path.
 
-The specific script option for the pipeline is managed by adding the variables to the text file in dictionary format. The script will read the dictionary using the JSON package and use it to control the pipeline. All available variables are laned inside of the text file.
+The specific script option for the pipeline is managed by adding the variables to the text file in dictionary format. The script will read the dictionary using the JSON package and use it to control the pipeline. All available variables are listed inside of the text file.
 
 In the `DataLab_test/examples` path, the `regi_var_ex.txt` stores variables for the registration pipeline. The `proc_3d_var_ex.txt` is storing the 3d process variables. User can modify each text file for their analysis. If the User doesn't specify the input pcd file, the script will automatically use the [ICP dataset](https://www.open3d.org/docs/release/python_api/open3d.data.DemoICPPointClouds.html#open3d.data.DemoICPPointClouds).
 
@@ -172,7 +172,7 @@ python3 regi_wrappers.py -v ../../examples/regi_var_ex.txt # For the registratio
 python3 proc_3d_wrappers.py -v ../../examples/proc_3d_var_ex.txt # For the 3d process pipeline
 ```
 
-The results will be saved in the `DataLab_test/outputs` paths as a default output path. If the user specifies the output path, a default path will be ignored. The results will be saved in three different formats. The point cloud data will be saved in `pcd` format. The secondary information that is not `pcd` format will be saved in `h5` format. The plot about registration will also saved in `png` format in the path. If the user sets the `use_debug` variable in the text file to the `True`, the script also saves the middle step of the calculation for more information.
+The results will be saved in the `DataLab_test/outputs` paths as a default output path. If the user specifies the output path, a default path will be ignored. The results will be saved in three different formats. The point cloud data will be saved in `pcd` format. The secondary information that is not `pcd` format will be saved in `h5` format. The plots from registration will be also saved in `png` format in the path. If the user sets the `use_debug` variable in the text file to the `True`, the script also saves the middle step of the calculation for more information.
 
 The below variables are the information that saved in the `h5` format.
 
