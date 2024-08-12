@@ -176,6 +176,26 @@ The results will be saved in the `DataLab_test/outputs` paths as a default outpu
 
 The below variables are the information that saved in the `h5` format.
 
+From registration pipelie:
+
+- `src_fpfh`: The fpfh fearture of the source pcd file.
+- `tar_fpfh`: The fpfh fearture of the target pcd file.
+- `voxels`: The voxel size for the down sampling of the both pcd files. 
+- `radius`: The radius for the down sampling and the fpfh fearture of the both pcd files.
+- `max_nns`: The KDTree variables for the down sampling and the fpfh fearture of the both pcd files.
+- `bbox_points`: The edge point of the bounding box for the both pcd files. 
+- `bbox_min_max`: The pcd point that touchs the bounding box for the both pcd files. 
+- `trans_mtx_pre`: The transformation matrix that used during the preprocess.
+- `trans_mtx_ransac`: The transformation matrix that calculated from the RANSAC registration.
+- `fit_ransac`: The fitness variable that calculated from the RANSAC registration.
+- `rmse_ransac`: The RMSE variable that calculated from the RANSAC registration.
+- `corr_ransac`: The correspondence set that calculated from the RANSAC registration.
+- `trans_mtx_icp`: The transformation matrix that calculated from the ICP registration.
+- `fit_icp`: The fitness variable that calculated from the ICP registration.
+- `rmse_icp`: The RMSE variable that calculated from the ICP registration.
+- `corr_icp`: The correspondence set that calculated from the ICP registration.
+
+From 3d process pipelie:
 
 # DataLab_test
 
