@@ -1,3 +1,15 @@
+"""registration loader
+
+This script is designed to perform the necessary calculation for the registration
+process. It will accpet the pcd files and perform the preprocessing, RANSAC, and
+ICP registration. The preprocessing is consist of down sampleing by voxeling and 
+extracting feature by FPFH. The class in this script will be called by the script
+in the wrappers path and perform the calculation.
+
+    * regi_loader - Class that contains the preprocessing and registration.
+    * draw_regi_result - Draw/save the registration results in the png format.
+"""
+
 import os
 import sys
 import numpy as np
@@ -11,11 +23,138 @@ sys.path.append(curr_path + '/../')
 from tools.utility import size_checker
 
 class regi_loader:
+    """Designed to perform the preprocessing, RANSAC, and ICP registration.
+
+    ...
+
+    Attributes
+    ----------
+    verbose : bool
+        Boolean statement to control the print (default is False)
+    use_debug : bool
+        By changing its to True, use can check and svae the all middle step
+        of the calculation. It is useful for the debugging (default is False)
+    pcd_list : list
+        The list of the point could data saved in the pcd formats. It is
+        saved in the list to be flexible for number of files. But for this
+        test, only two pcd files will be stored in the list.
+    pcd_list_len : int
+        The number of pcd files in the pcd_list  
+    pipe_regi : o3d.pipelines.registration
+        The instance for the o3d.pipelines.registration library.
+        We could just load this by the import command at the begining.
+    reg_ran_trans : np.ndarray
+        The transformation maxtrix of ransac registration.
+        It will be used for icp registration.
+    box_points : np.ndarray
+        The edge points of the bounding box (available if `use_debug` is True).
+    box_min_max_bound : np.adarray
+        The edge points that touching the bound box
+        (available if `use_debug` is True).
+    pcd_down : list
+        The down sampled source and target point cloud data in the list.
+    pcd_fpfh : list
+        The fpfh feature of source and target point cloud data in the list.
+    voxels : np.ndarray
+        The voxel size per pcd file.
+    src_idx : int
+        The index of the source pcd file (available if `use_debug` is True).
+    trans_init : np.ndarray
+        The initial guess for transformation (available if `use_debug` is True).
+    rads : np.ndarray
+        The radius paramters for preprocessing 
+        (available if `use_debug` is True). 
+    max_nns : np.ndarray
+        The neighboring bin limitation for the KDTree function in preprocessing
+        (available if `use_debug` is True).
+    box_pts : np.ndarray
+        The edge points of the bounding box for all pcd files
+        (available if `use_debug` is True).
+    box_min_max : np.ndarray
+        The edge points that touching the bound box for all pcd files
+        (available if `use_debug` is True).
+    pcd_indi_down : o3d.geometry.PointCloud 
+        The down sample pcd for the fpfh process.
+    voxel_avg : float
+        The average voxel size for both registration process. 
+    reg_ran_fit : float
+        The # of inlier correspondences / # of points in source for the RANSAC 
+        registration (available if `use_debug` is True).
+    reg_ran_rmse : float
+        RMSE of all inlier correspondences for the RANSAC registration
+        (available if `use_debug` is True).
+    reg_ran_corr : np.adarray
+        Correspondence set between source and target point cloud for the RANSAC
+        registration (available if `use_debug` is True).
+    reg_icp_trans : np.adarray
+        Transformation matrix for the ICP registration 
+        (available if `use_debug` is True).
+    reg_icp_fit : float
+        The # of inlier correspondences / # of points in source for the ICP 
+        registration (available if `use_debug` is True).
+    reg_icp_rmse : float
+        RMSE of all inlier correspondences for the ICP registration
+        (available if `use_debug` is True).
+    reg_icp_corr : np.adarray
+        Correspondence set between source and target point cloud for the ICP
+        registration (available if `use_debug` is True).
+
+    Methods
+    -------
+    get_KDTree_params(radius: float, max_nn: int
+                     ) -> o3d.cpu.pybind.geometry.KDTreeSearchParamHybrid
+        KDTree search parameters for hybrid KNN and radius search
+    get_down_samp(pcd_idx: int, voxel_size: float, radius_down: float, 
+                  max_nn_down: int) -> o3d.geometry.PointCloud
+        Down samples input pointcloud into output pointcloud with a voxel.      
+    get_fpfh(radius_fpfh: float, max_nn_fpfh: int
+            ) -> o3d.pipelines.registration.Feature
+        Function to compute FPFH feature for a point cloud.
+    get_voxel_from_grid(pcd_idx: int, num_bins: float) -> float
+        Calculates voxel size based on the bounding box size and input binning.
+    get_pre_process(
+        src_idx: int, tar_idx: int, 
+        trans_init: np.ndarray = np.full((4, 4), np.nan, dtype=float),
+        voxel_size: float = np.nan, num_bins: float = 64, 
+        rad_down: float = np.nan, rad_fpfh: float = np.nan,
+        rad_down_fac: float = 2, rad_fpfh_fac: float = 5, 
+        max_nn_down: int = 30, max_nn_fpfh: int = 100)
+        Performs the preprocess by calling down sample and fpfh feature.
+    get_ransac_regi(
+        src_idx: int, tar_idx: int, dis_thres: float = np.nan, 
+        dis_thres_fac: float = 1.5, mutual_filt: bool = True, ratio: float = 0.9,
+        max_iter: int = 100000, confi: float = 0.999, scaling: bool = False
+        ) -> o3d.pipelines.registration.RegistrationResult
+        Performs RANSAC registration. This registration is based on the down 
+        sampled dataset and fpfh feature that calculated from preprocessing step.
+    get_icp_regi(
+        src_idx: int, tar_idx: int, dis_thres: float = np.nan,
+        dis_thres_fac: float = 0.4, max_iter: int = 2000, 
+        trans_init = np.full((4, 4), np.nan, dtype=float),
+        use_p2p: bool = False
+        ) -> o3d.pipelines.registration.RegistrationResult
+        Performs ICP registration. This registration is based on the 
+        transformation matrix that obtained from the RANSAC registration.
+    """
 
     def __init__(self, 
-                 pcd_list,
+                 pcd_list: list,
                  verbose: bool = False, 
                  use_debug: bool = False): 
+        """Initializer for the registration class.
+
+        Parameters
+        ----------
+        pcd_list : list
+            The list of the point could data saved in the pcd formats. It is
+            saved in the list to be flexible for number of files. But for this 
+            test, only two pcd files will be stored in the list.
+        verbose : bool
+            Boolean statement to control the print (default is False)
+        use_debug : bool
+            By changing its to True, use can check and svae the all middle step
+            of the calculation. It is useful for the debugging (default is False)
+        """
 
         self.verbose = verbose
         self.use_debug = use_debug
@@ -353,7 +492,8 @@ class regi_loader:
                         ratio: float = 0.9,
                         max_iter: int = 100000,
                         confi: float = 0.999,
-                        scaling: bool = False):
+                        scaling: bool = False
+                        ) -> o3d.pipelines.registration.RegistrationResult:
         """Performs RANSAC registration. This registration is based on the down 
         sampled dataset and fpfh feature that calculated from preprocessing step.
         The fidning corresponding target points to the randomly selected source 
@@ -466,7 +606,8 @@ class regi_loader:
                      dis_thres_fac: float = 0.4,
                      max_iter: int = 2000,
                      trans_init = np.full((4, 4), np.nan, dtype=float),
-                     use_p2p: bool = False):
+                     use_p2p: bool = False
+                     ) -> o3d.pipelines.registration.RegistrationResult:
         """Performs ICP registration. This registration is based on the 
         transformation matrix that obtained from the RANSAC registration. The    
         process is applied to actual point cloud, which is larger dataset, the
