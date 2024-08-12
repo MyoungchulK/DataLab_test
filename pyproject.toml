@@ -3,10 +3,14 @@ name = "some_package"
 version = "0.1.0"
 description = "Template repository for python project"
 authors = ["Daisuke Sato <daisuke.sato@datalabs.jp>"]
+packages = [
+    { include = "pcd_register" },
+]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"
-numpy = "^2.0.1"
+numpy = "<2"
+#numpy = "^2.0.1"
 h5py = "^3.11.0"
 click = "^8.1.7"
 open3d = "^0.18.0"
