@@ -197,6 +197,17 @@ From registration pipelie:
 
 From 3d process pipelie:
 
+- `covar_mtx`: The covariance matrix at a point with an index `i`.
+- `approx_curv`: The approximate curvature at the point `i`.
+- `proj_pts`: The project points within the radius at a point with index `i` to the plane.
+- `centriod`: The centriod of the radius `r` at a point `i`.
+- `eigen_val`: The eigen value at the point `i`.
+- `eigen_vec`: The eigen vector at the point `i`.
+- `nomal_vec`: The normal vector at the point `i`.
+- `displace_vec`: The displacement vector between the point `i` and neighboting points.
+- `pts_i`: The point with an index `i`.
+- `pts_nei`: The neighboring points within the radius `r` at a point `i`.
+
 # DataLab_test
 
 
