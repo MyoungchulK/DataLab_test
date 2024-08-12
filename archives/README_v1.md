@@ -111,18 +111,11 @@ Before you begin, ensure you have met the following requirements:
 
 ### OS
 
-This package is developed from the `macOS` version `12.7.5`. In the future, it needs to be tested for working on other OSs.
+...
 
 ### Other software dependencies
 
-In order to run this package, the below packages needed to be installed or added in the `pyproject.toml`.
-
-- `python >=3.10,<3.11`: A general Python package.
-- `numpy <2`: Fundamental package for array computing in Python.
-- `h5py ^3.11.0`: Read and write HDF5 files from Python.
-- `click ^8.1.7`: Composable command line interface toolkit.
-- `open3d ^0.18.0`: A Modern Library for 3D Data Processing.
-- `tqdm ^4.66.5`: Fast, Extensible Progress Meter.
+...
 
 ## Installation
 
