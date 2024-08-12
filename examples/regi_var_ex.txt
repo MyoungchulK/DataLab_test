@@ -26,4 +26,90 @@ use_dat_ex : bool
 use_debug : bool
     By changing its to True, use can check and svae the all middle step
     of the calculation. It is useful for the debugging (default is False).
+src_idx : int        
+    The index of the source pcd file from the list. It will select the 
+    file from the list based on the index.
+tar_idx : int
+    The index of the target pcd file from the list. It will select the
+    file from the list based on the index.
+trans_init : np.ndarray
+    The initial transformation guess (The default is the nan array).
+voxel_size : float
+    The input voxel size by the user (The default is nan). 
+num_bins : float
+    The number of bins that user want to divide the bounding box. It will
+    be only used if user didn't set the voxel size.
+rad_down : float
+    The radius limitation for the KDTree function in the down sampling
+    function (The default is nan).
+rad_fpfh : float
+    The radius limitation for the KDTree function in the fpfh feature
+    function (The default is nan).
+rad_down_fac : flaot
+    The radius factor for the down sampling. If user didn't specify the
+    radius for the down sampling, It will be calculated by product of
+    the radius factor and voxel size (The default is 2).
+rad_fpfh_fac : float
+    The radius factor for the fpfh feature. If user didn't specify the 
+    radius for fpfh feature, It will be calculated by product of the
+    radius factor and voxel size (The default is 5).
+max_nn_down : int
+    The neighboring bin limitation for the KDTree function in the down
+    sampling function (The default is 30).
+max_nn_fpfh : int
+    The neighboring bin limitation for the KDTree function in the fpfh
+    feature function (The default is 100).
+src_idx_ran : int
+    The index of the source pcd file from the list. It will select the
+    file from the list based on the index. It is for RANSAC registration.
+tar_idx_ran : int
+    The index of the target pcd file from the list. It will select the
+    file from the list based on the index. It is for RANSAC registration.
+dis_thres : float
+    The distance threshold for the CorrespondenceCheckerBasedOnDistance()
+    class (Default is np.nan). 
+dis_thres_fac : flaot
+    The distance threshold factor for the pruning step. If user didn't 
+    specify it, It will be calculated by product of the factor and 
+    averaged voxel size from the preprocessing (Default is 1.5).
+ang_thres : float
+    The angle threshold for the normal related pruning step. It is
+    currently disabled (Default is 2 * np.pi).
+mutual_filt : bool
+    Enables mutual filter such that the correspondence of the source 
+    point’s correspondence is itself(Default is True). 
+ratio : float 
+    The ratio threshold for the edge length related pruning step 
+    (Default is 0.9).
+max_iter : int
+    The hyperparameter for the minimization. It is the maximum limitation
+    of the number of iterations (Default is 100000). 
+confi : float
+    The hyperparameter for the minimization. It is the limitation for
+    confidence probability of the fitness(Default is 0.999).
+scaling : bool
+    The scaling threshold for the point to point estimation (Default is False).
+src_idx_icp : int   
+    The index of the source pcd file from the list. It will select the
+    file from the list based on the index. It is for the ICP registration.
+tar_idx_icp : int
+    The index of the target pcd file from the list. It will select the
+    file from the list based on the index. It is for the ICP registration.       
+dis_thres_icp : float
+    The distance threshold for the maximum correspondence between data
+    (Default is np.nan). It is for the ICP registration. 
+dis_thres_fac_icp : flaot
+    The distance threshold factor. If user didn't specify it, It will be
+    calculated by product of the factor and averaged voxel size from the
+    preprocessing (Default is 0.4). It is for the ICP registration.
+max_iter_icp : int
+    The hyperparameter for the minimization. It is the maximum limitation
+    of the number of iterations (Default is 2000). 
+    It is for the ICP registration.
+trans_init_icp : np.ndarray
+    The initial transformation guess from RANSAC (The default is the nan array).
+    It is for the ICP registration.
+use_p2p : bool
+    The boolean statement for controlling which estimation method user
+    will be used (Default is False).
 """
