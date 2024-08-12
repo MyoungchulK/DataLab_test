@@ -150,5 +150,21 @@ poetry install
 
 Follow these steps:
 
-...
+User can execute the 2 pipelins by `main.py` in the `DataLab_test/` path or individually by `regi_wrappers.py` (1st pipeline) and `proc_3d_wrappers.py` (2nd pipeline) from the `DataLab_test/pcd_register/wrappers/` path. 
+
+If you execute scipt by `main.py`, the package will choose the pipeline based on the option stored in text files in the `DataLab_test/examples` path.
+
 # DataLab_test
+
+
+
+
+
+
+
+
+
+
+
+
+
