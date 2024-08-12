@@ -52,7 +52,11 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
         dat_dict = get_data_info(dat_var)
     verbose = dat_dict['verbose']
     output_dir = os.path.dirname(dat_dict['output'])
-    
+
+    # If it is set to True, use can check and save the all middle step
+    # of the calculation. It is useful for the debugging.
+    use_debug = dat_dict['use_debug']   
+ 
     # Loads pcd file.
     pcd = pcd_loader(dat_dict['dat_list'], verbose=verbose)
 
@@ -63,17 +67,17 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
 
     # Constructs the class
     regi = regi_loader(pcd_list, verbose=verbose, 
-                       use_debug=dat_dict['use_debug'])
+                       use_debug=use_debug)
 
-    # Performs pre processing
+    # Performs pre processing. Other options are following default vaules.
     regi.get_pre_process(0, 1)
     pcd_down = regi.pcd_down
     pcd_fpfh = regi.pcd_fpfh
    
-    # RANSAC registration
+    # RANSAC registration. Other options are following default vaules.
     ransac_regi = regi.get_ransac_regi(0, 1) 
 
-    # ICP registration
+    # ICP registration. Other options are following default vaules.
     icp_regi = regi.get_icp_regi(0, 1)
     
     # Saving the results of down sample, RANSAC, ICP
@@ -104,8 +108,26 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
                 f'{res[re_indi]}_{dat_dict["pipe_name"]}_{pcds[p_indi]}.pcd') 
             save_pcd_info(results[re_indi][p_indi], file_path, verbose=verbose) 
 
-    return {"1":np.array([1])}
-    """
+    # Saving secondary information that cannot go inside of the pcd format.
+    if use_debug:
+        debug_lists = [regi.voxels, regi.rads, regi.max_nns, regi.box_pts, 
+                       regi.box_min_max, regi.trans_init,
+                       regi.reg_ran_trans, np.array([regi.reg_ran_fit]), 
+                       np.array([regi.reg_ran_rmse]), regi.reg_ran_corr,
+                       regi.reg_icp_trans, np.array([regi.reg_icp_fit]),
+                       np.array([regi.reg_icp_rmse]), regi.reg_icp_corr]
+        debug_keys = ['voxels', 'radius', 'max_nns', 'bbox_points', 
+                      'bbox_min_max', 'trans_mtx_pre',
+                      'trans_mtx_ransac', 'fit_ransac', 'rmse_ransac', 
+                      'corr_ransac',
+                      'trans_mtx_icp', 'fit_icp', 'rmse_icp', 'corr_icp']
+
+    # Makes a dictionary for the results.
+    results = {'src_fpfh':pcd_fpfh[0].data, 'tar_fpfh':pcd_fpfh[1].data}
+    if use_debug: # Add the middle steps.
+        for idx, de in enumerate(debug_keys):
+            results[de] = debug_lists[idx] 
+    
     if __name__ == "__main__":
         # Save the results.
         # Until I confirm the conventional file format for saving the results,
@@ -114,7 +136,7 @@ def regi_main(dat_var: str, dat_dict: dict) -> dict:
     else: 
         # Return the results.
         return results
-    """
+    
 if __name__ == "__main__":
 
     regi_main()

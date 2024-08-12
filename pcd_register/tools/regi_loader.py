@@ -32,7 +32,7 @@ class regi_loader:
     verbose : bool
         Boolean statement to control the print (default is False)
     use_debug : bool
-        By changing its to True, use can check and svae the all middle step
+        By changing its to True, use can check and save the all middle step
         of the calculation. It is useful for the debugging (default is False)
     pcd_list : list
         The list of the point could data saved in the pcd formats. It is
@@ -588,7 +588,7 @@ class regi_loader:
             # RMSE of all inlier correspondences.
             self.reg_ran_rmse = reg_ran.inlier_rmse
             # Correspondence set between source and target point cloud.
-            self.reg_ran_corr = reg_ran.correspondence_set
+            self.reg_ran_corr = np.asarray(reg_ran.correspondence_set)
 
         # print quick summary if user want to see it. 
         if self.verbose:
@@ -697,7 +697,7 @@ class regi_loader:
             # RMSE of all inlier correspondences.
             self.reg_icp_rmse = reg_icp.inlier_rmse
             # Correspondence set between source and target point cloud.
-            self.reg_icp_corr = reg_icp.correspondence_set
+            self.reg_icp_corr = np.asarray(reg_icp.correspondence_set)
 
         # print quick summary if user want to see it. 
         if self.verbose:
